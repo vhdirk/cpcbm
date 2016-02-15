@@ -15,6 +15,7 @@ Install a gcc arm toolchain and make sure it's used to compile by setting the co
 
 Since the makefiles use GNU compiler tools and linux commands (e.g. "ls"), in order to compile on Windows environment something as MinGW or Cygwin should be used.
 
+Others points to be filled properly:
 
 * Configuration
 * Dependencies
