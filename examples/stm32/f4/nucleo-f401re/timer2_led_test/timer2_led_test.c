@@ -2,9 +2,6 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
-//#include <libopencm3/cm3/nvic.h>
-
-//#include <libopencmsis/core_cm3.h>
 
 int main(void)
 {
