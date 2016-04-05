@@ -10,9 +10,9 @@ These are demo projects using the Nucleo F401 board and libopencm3 libraries.
 
 * Generic instructions
 
-Get the repository and libopencm3 in a folder.
-Install a gcc arm toolchain and make sure it's used to compile by setting the correct PATH to it.
+Get the repository in a folder (I call it "main folder" from now on), and get the library libopencm3 in "libopencm3" sub-folder.
 
+You should install a gcc arm toolchain and make sure it's used to compile by setting the correct PATH to it.
 Since the makefiles use GNU compiler tools and linux commands (e.g. "ls"), in order to compile on Windows environment something as MinGW or Cygwin should be used.
 In particular for Windows, download and install:
 
@@ -25,7 +25,17 @@ Set the path for the tools and the toolchain, for example:
 *
 set PATH=C:\msys\1.0\bin\;C:\Python27\;C:\path-to-gcc-arm-none-eabi\bin;*
 
-Others points to be filled properly:
+Then from a command line change directory tothe main project folder and type:
+
+make bin all
+
+, to compile the projects and generate the binaries.
+To clean use the command:
+
+make clean
+
+
+Others points of this readme to be filled properly:
 
 * Configuration
 * Dependencies
