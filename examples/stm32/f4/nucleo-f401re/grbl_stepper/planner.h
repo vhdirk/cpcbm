@@ -58,7 +58,7 @@ typedef struct {
 
       
 // Initialize and reset the motion plan subsystem
-void plan_reset();
+void plan_reset(void);
 
 // Add a new linear movement to the buffer. target[N_AXIS] is the signed, absolute target position 
 // in millimeters. Feed rate specifies the speed of the motion. If feed rate is inverted, the feed
@@ -71,27 +71,27 @@ void plan_reset();
 
 // Called when the current block is no longer needed. Discards the block and makes the memory
 // availible for new blocks.
-void plan_discard_current_block();
+void plan_discard_current_block(void);
 
 // Gets the current block. Returns NULL if buffer empty
-plan_block_t *plan_get_current_block();
+plan_block_t *plan_get_current_block(void);
 
 // Called periodically by step segment buffer. Mostly used internally by planner.
 uint8_t plan_next_block_index(uint8_t block_index);
 
 // Called by step segment buffer when computing executing block velocity profile.
-float plan_get_exec_block_exit_speed();
+float plan_get_exec_block_exit_speed(void);
 
 // Reset the planner position vector (in steps)
-void plan_sync_position();
+void plan_sync_position(void);
 
 // Reinitialize plan with a partially completed block
-void plan_cycle_reinitialize();
+void plan_cycle_reinitialize(void);
 
 // Returns the number of active blocks are in the planner buffer.
-uint8_t plan_get_block_buffer_count();
+uint8_t plan_get_block_buffer_count(void);
 
 // Returns the status of the block ring buffer. True, if buffer is full.
-uint8_t plan_check_full_buffer();
+uint8_t plan_check_full_buffer(void);
 
 #endif

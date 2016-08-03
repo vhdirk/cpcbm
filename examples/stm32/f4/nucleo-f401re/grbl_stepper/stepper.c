@@ -29,6 +29,9 @@
 #include <libopencm3/cm3/nvic.h>
 
 #include <libopencmsis/core_cm3.h>
+
+#include <cpu_map_nucleof401.h>
+
 #define F_CPU (16000000)
 #endif
 
@@ -62,7 +65,11 @@
 // discarded when entirely consumed and completed by the segment buffer. Also, AMASS alters this
 // data for its own use. 
 typedef struct {  
+#ifdef NUCLEO
+  uint16_t direction_bits;
+#else
   uint8_t direction_bits;
+#endif
   uint32_t steps[N_AXIS];
   uint32_t step_event_count;
 } st_block_t;
@@ -91,13 +98,22 @@ typedef struct {
            counter_y, 
            counter_z;
   #ifdef STEP_PULSE_DELAY
+    #ifdef NUCLEO
+    uint16_t step_bits; // Stores out_bits output to complete the step pulse delay
+    #else
     uint8_t step_bits;  // Stores out_bits output to complete the step pulse delay
+    #endif
   #endif
   
   uint8_t execute_step;     // Flags step execution for each interrupt.
   uint8_t step_pulse_time;  // Step pulse reset time after step rise
+  #ifdef NUCLEO
+  uint16_t step_outbits;        // The next stepping-bits to be output
+  uint16_t dir_outbits;
+  #else
   uint8_t step_outbits;         // The next stepping-bits to be output
   uint8_t dir_outbits;
+  #endif
   #ifdef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
     uint32_t steps[N_AXIS];
   #endif
@@ -114,9 +130,14 @@ static volatile uint8_t segment_buffer_tail;
 static uint8_t segment_buffer_head;
 static uint8_t segment_next_head;
 
-// Step and direction port invert masks. 
+// Step and direction port invert masks.
+#ifdef NUCLEO  
+static uint16_t step_port_invert_mask;
+static uint16_t dir_port_invert_mask;
+#else  
 static uint8_t step_port_invert_mask;
 static uint8_t dir_port_invert_mask;
+#endif
 
 // Used to avoid ISR nesting of the "Stepper Driver Interrupt". Should never occur though.
 static volatile uint8_t busy;   
@@ -187,7 +208,7 @@ static st_prep_t prep;
   are shown and defined in the above illustration.
 */
 
-#if 0
+
 // Stepper state initialization. Cycle should only start if the st.cycle_start flag is
 // enabled. Startup init and limits call this function but shouldn't start the cycle.
 void st_wake_up() 
@@ -205,29 +226,45 @@ void st_wake_up()
     #ifdef STEP_PULSE_DELAY
       // Set total step pulse time after direction pin set. Ad hoc computation from oscilloscope.
       st.step_pulse_time = -(((settings.pulse_microseconds+STEP_PULSE_DELAY-2)*TICKS_PER_MICROSECOND) >> 3);
+	  #ifdef NUCLEO
+	  #else
       // Set delay between direction pin write and step command.
       OCR0A = -(((settings.pulse_microseconds)*TICKS_PER_MICROSECOND) >> 3);
+	  #endif
     #else // Normal operation
       // Set step pulse time. Ad hoc computation from oscilloscope. Uses two's complement.
       st.step_pulse_time = -(((settings.pulse_microseconds-2)*TICKS_PER_MICROSECOND) >> 3);
     #endif
 
+    #ifdef NUCLEO
+    /* Enable TIM1 Stepper Driver Interrupt. */
+    timer_enable_irq(TIM1, TIM_DIER_CC1IE); /** Capture/compare 1 interrupt enable */
+    #else
     // Enable Stepper Driver Interrupt
     TIMSK1 |= (1<<OCIE1A);
+    #endif
   }
 }
 
-
 // Stepper shutdown
-void st_go_idle() 
+void st_go_idle(void) 
 {
   // Disable Stepper Driver Interrupt. Allow Stepper Port Reset Interrupt to finish, if active.
+  #ifdef NUCLEO
+  /* Disable TIM1 Stepper Driver Interrupt. */
+  timer_disable_irq(TIM1, TIM_DIER_CC1IE); /** Capture/compare 1 interrupt enable */
+  #else
   TIMSK1 &= ~(1<<OCIE1A); // Disable Timer1 interrupt
   TCCR1B = (TCCR1B & ~((1<<CS12) | (1<<CS11))) | (1<<CS10); // Reset clock to no prescaling.
+  #endif
   busy = false;
   
+  #ifdef NUCLEO
+  //TO BE DONE
+  #else
   // Set stepper driver idle state, disabled or enabled, depending on settings and circumstances.
   bool pin_state = false; // Keep enabled.
+  
   if (((settings.stepper_idle_lock_time != 0xff) || sys_rt_exec_alarm) && sys.state != STATE_HOMING) {
     // Force stepper dwell to lock axes for a defined amount of time to ensure the axes come to a complete
     // stop and not drift from residual inertial forces at the end of the last movement.
@@ -237,8 +274,8 @@ void st_go_idle()
   if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)) { pin_state = !pin_state; } // Apply pin invert.
   if (pin_state) { STEPPERS_DISABLE_PORT |= (1<<STEPPERS_DISABLE_BIT); }
   else { STEPPERS_DISABLE_PORT &= ~(1<<STEPPERS_DISABLE_BIT); }
+  #endif //NUCLEO
 }
-
 
 /* "The Stepper Driver Interrupt" - This timer interrupt is the workhorse of Grbl. Grbl employs
    the venerable Bresenham line algorithm to manage and exactly synchronize multi-axis moves.
@@ -288,29 +325,56 @@ void st_go_idle()
 // TODO: Replace direct updating of the int32 position counters in the ISR somehow. Perhaps use smaller
 // int8 variables and update position counters only when a segment completes. This can get complicated 
 // with probing and homing cycles that require true real-time positions.
+#ifdef NUCLEO
+void tim1_cc_isr(void)
+#else
 ISR(TIMER1_COMPA_vect)
+#endif
 {        
 // SPINDLE_ENABLE_PORT ^= 1<<SPINDLE_ENABLE_BIT; // Debug: Used to time ISR
   if (busy) { return; } // The busy-flag is used to avoid reentering this interrupt
   
   // Set the direction pins a couple of nanoseconds before we step the steppers
+  #ifdef NUCLEO
+  SET_DIRECTION_BITS(st.dir_outbits);
+  #else
   DIRECTION_PORT = (DIRECTION_PORT & ~DIRECTION_MASK) | (st.dir_outbits & DIRECTION_MASK);
+  #endif
 
   // Then pulse the stepping pins
+  #ifdef NUCLEO
+  #ifdef STEP_PULSE_DELAY
+    SAVE_STEP_BITS(st.step_outbits); // Store out_bits to prevent overwriting.
+  #else  // Normal operation
+    SET_STEP_BITS(st.step_outbits); //macro doing the set
+  #endif
+  
+  // Enable step pulse reset timer so that The Stepper Port Reset Interrupt can reset the signal after
+  // exactly settings.pulse_microseconds microseconds, independent of the main Timer1 prescaler.
+  timer_set_period(TIM2, st.step_pulse_time); // Reload Timer2 counter
+  timer_set_prescaler(TIM2, 8); // Full speed, 1/8 prescaler
+  timer_enable_counter(TIM2);   // START Timer2 count. 
+  
+  #else
   #ifdef STEP_PULSE_DELAY
     st.step_bits = (STEP_PORT & ~STEP_MASK) | st.step_outbits; // Store out_bits to prevent overwriting.
   #else  // Normal operation
     STEP_PORT = (STEP_PORT & ~STEP_MASK) | st.step_outbits;
-  #endif  
+  #endif
 
   // Enable step pulse reset timer so that The Stepper Port Reset Interrupt can reset the signal after
   // exactly settings.pulse_microseconds microseconds, independent of the main Timer1 prescaler.
   TCNT0 = st.step_pulse_time; // Reload Timer0 counter
   TCCR0B = (1<<CS01); // Begin Timer0. Full speed, 1/8 prescaler
+  
+  #endif //NUCLEO
 
   busy = true;
+  #ifdef NUCLEO
+  #else
   sei(); // Re-enable interrupts to allow Stepper Port Reset Interrupt to fire on-time. 
          // NOTE: The remaining code in this ISR will finish before returning to main program.
+  #endif //NUCLEO
     
   // If there is no step segment, attempt to pop one from the stepper buffer
   if (st.exec_segment == NULL) {
@@ -319,13 +383,21 @@ ISR(TIMER1_COMPA_vect)
       // Initialize new step segment and load number of steps to execute
       st.exec_segment = &segment_buffer[segment_buffer_tail];
 
+      #ifdef NUCLEO
+        //OMITTED FOR NOW
+      #else
       #ifndef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
         // With AMASS is disabled, set timer prescaler for segments with slow step frequencies (< 250Hz).
         TCCR1B = (TCCR1B & ~(0x07<<CS10)) | (st.exec_segment->prescaler<<CS10);
       #endif
+      #endif //NUCLEO
 
       // Initialize step segment timing per step and load number of steps to execute.
+      #ifdef NUCLEO
+      timer_set_oc_value(TIM1, TIM_OC1, st.exec_segment->cycles_per_tick);
+      #else
       OCR1A = st.exec_segment->cycles_per_tick;
+      #endif
       st.step_count = st.exec_segment->n_step; // NOTE: Can sometimes be zero when moving slow.
       // If the new segment starts a new planner block, initialize stepper variables and counters.
       // NOTE: When the segment data index changes, this indicates a new planner block.
@@ -348,14 +420,22 @@ ISR(TIMER1_COMPA_vect)
     } else {
       // Segment buffer empty. Shutdown.
       st_go_idle();
+      #ifdef NUCLEO
+      // TO BE CORRECTED: CLI operation here!!!
+      #else
       bit_true_atomic(sys_rt_exec_state,EXEC_CYCLE_STOP); // Flag main program for cycle end
+      #endif //NUCLEO
       return; // Nothing to do but exit.
     }  
   }
   
   
   // Check probing state.
+  #ifdef NUCLEO
+  //TO BE DONE
+  #else
   probe_state_monitor();
+  #endif //NUCLEO
    
   // Reset step out bits.
   st.step_outbits = 0; 
@@ -419,6 +499,38 @@ ISR(TIMER1_COMPA_vect)
    cause issues at high step rates if another high frequency asynchronous interrupt is 
    added to Grbl.
 */
+#ifdef NUCLEO
+//only an interrupt line is available for both overflow and output compare events, so one isr is used
+void tim2_isr(void)
+{
+    // This interrupt is enabled by ISR_TIMER1_COMPAREA when it sets the motor port bits to execute
+    // a step. This ISR resets the motor port after a short period (settings.pulse_microseconds) 
+    // completing one step cycle.
+    /* check if update interrupt event has occured */
+    if(timer_interrupt_source(TIM2, TIM_SR_UIF))
+    {
+        /* clear flag */
+        timer_clear_flag(TIM2, TIM_SR_UIF);
+        // Reset stepping pins (leave the direction pins)
+		SET_STEP_BITS(step_port_invert_mask);
+        timer_disable_counter(TIM2); // Disable Timer2 to prevent re-entering this interrupt when it's not needed.
+    }
+    #ifdef STEP_PULSE_DELAY
+    // This interrupt is used only when STEP_PULSE_DELAY is enabled. Here, the step pulse is
+    // initiated after the STEP_PULSE_DELAY time period has elapsed. The ISR TIMER2_OVF interrupt
+    // will then trigger after the appropriate settings.pulse_microseconds, as in normal operation.
+    // The new timing between direction, step pulse, and step complete events are setup in the
+    // st_wake_up() routine.
+    /* check if a compare interrupt event has occured */
+    if(timer_interrupt_source(TIM2, TIM_SR_CC1IF))
+    {
+        /* clear flag */
+        timer_clear_flag(TIM2, TIM_SR_CC1IF);
+		SET_STEPS(stepbits);// Begin step pulse.
+    }
+    #endif //STEP_PULSE_DELAY
+}
+#else
 // This interrupt is enabled by ISR_TIMER1_COMPAREA when it sets the motor port bits to execute
 // a step. This ISR resets the motor port after a short period (settings.pulse_microseconds) 
 // completing one step cycle.
@@ -438,7 +550,9 @@ ISR(TIMER0_OVF_vect)
   { 
     STEP_PORT = st.step_bits; // Begin step pulse.
   }
-#endif
+#endif //STEP_PULSE_DELAY
+
+#endif //NUCLEO
 
 
 // Generates the step and direction port invert masks used in the Stepper Interrupt Driver.
@@ -471,19 +585,91 @@ void st_reset()
   busy = false;
   
   st_generate_step_dir_invert_masks();
-      
+
+#ifdef NUCLEO
+  // Initialize step and direction port pins.
+  SET_STEP_BITS(step_port_invert_mask);
+  SET_DIRECTION_BITS(dir_port_invert_mask);
+#else
   // Initialize step and direction port pins.
   STEP_PORT = (STEP_PORT & ~STEP_MASK) | step_port_invert_mask;
   DIRECTION_PORT = (DIRECTION_PORT & ~DIRECTION_MASK) | dir_port_invert_mask;
+#endif
 }
-#endif //endif0
-
-
 
 // Initialize and start the stepper motor subsystem
 void stepper_init()
 {
 #ifdef NUCLEO
+    /* Enable GPIOA and GPIOB clocks. */
+    rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_GPIOB);
+    // Configure step and direction interface pins
+    SET_STEP_DDR;
+	STEPPERS_DISABLE_DDR |= STEPPERS_DISABLE_MASK_DDR; //this is slightly different, but should be retro-compatible
+    SET_DIRECTION_DDR;
+    /* These 3 instructions should be equivalent to the followings commented out at the moment*/
+    /* Step pulse axis X-Y-Z */
+    /* Set GPIO10 in GPIO port A and GPIO3/5 in GPIO port B to 'output push-pull'. */
+    // gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO10);
+    // gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO3);
+    // gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO5);
+    /* Stepper enable/disable */
+    /* Set GPIO9 (in GPIO port A) to 'output push-pull'. */
+    // gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO9);
+    /* Direction axis X-Y-Z*/
+    /* Set GPIO4/10 in GPIO port B and GPIO8 in GPIO port A to 'output push-pull'. */
+    // gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO4);
+    // gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO10);
+    // gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO8);
+    
+    /* Timer 1 is used as stepper driver interrupt */
+    /* Interrupt by output compare mode shall be used */
+    /* Clear Timer on Compare match may be substituted 
+       by Auto-Reload feature in normal upcounting mode */
+    /* Enable TIM1 clock. */
+    rcc_periph_clock_enable(RCC_TIM1);
+    timer_reset(TIM1);
+    /* Continous mode. */
+    timer_continuous_mode(TIM1);
+    /* Timer global mode:
+	 * - No divider
+	 * - Alignment edge
+	 * - Direction up
+	 */
+	timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+    /* ARR reload enable. */
+    timer_enable_preload(TIM1);
+    // Disconnect OC1 output
+    timer_disable_oc_output(TIM1, TIM_OC1);
+    timer_disable_oc_output(TIM1, TIM_OC2);
+    timer_disable_oc_output(TIM1, TIM_OC3);
+    timer_disable_oc_output(TIM1, TIM_OC4);
+    
+    /* TO BE VERIFIED: here timer 1 is not enabled, while in previous code it was likely clock gated */
+    
+    /* Timer 2 is used as stepper driver interrupt (previously TIM0) */
+    /* Interrupt by overflow shall be used */
+    /* Enable TIM2 clock. */
+    rcc_periph_clock_enable(RCC_TIM2);
+    timer_reset(TIM2);
+    /* Timer global mode:
+     * - No divider
+     * - Alignment edge
+     * - Direction up
+     */
+    timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+    /* Enable TIM1 interrupt. */
+    nvic_enable_irq(NVIC_TIM1_CC_IRQ); /*to be verified if this may be placed here */
+    
+    /* Enable TIM2 interrupt. */
+    nvic_enable_irq(NVIC_TIM2_IRQ); /*to be verified if this may be placed here */
+    /* Enable commutation interrupt. */
+    timer_enable_irq(TIM2, TIM_DIER_UIE);/** Update interrupt enable */
+  #ifdef STEP_PULSE_DELAY
+    timer_enable_irq(TIM2, TIM_DIER_CC1IE); /** Capture/compare 1 interrupt enable */
+  #endif
+  
 #else
   // Configure step and direction interface pins
   STEP_DDR |= STEP_MASK;
@@ -491,7 +677,7 @@ void stepper_init()
   DIRECTION_DDR |= DIRECTION_MASK;
 
   // Configure Timer 1: Stepper Driver Interrupt
-  TCCR1B &= ~(1<<WGM13); // waveform generation = 0100 = CTC
+  TCCR1B &= ~(1<<WGM13); // waveform generation = 0100 = CTC //Clear Timer on Compare match
   TCCR1B |=  (1<<WGM12);
   TCCR1A &= ~((1<<WGM11) | (1<<WGM10)); 
   TCCR1A &= ~((1<<COM1A1) | (1<<COM1A0) | (1<<COM1B1) | (1<<COM1B0)); // Disconnect OC1 output
@@ -864,7 +1050,8 @@ void st_prep_buffer()
 // Declare system global variable structure
 system_t sys;
 
-int main()
+void main(void)
 {
-
+	stepper_init();
+    while(1);
 }
