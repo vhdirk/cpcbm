@@ -21,7 +21,11 @@ BINARY = stepper
 
 LDSCRIPT = ../nucleo-f401re.ld
 
-CPPFLAGS += -I.
+CPPFLAGS += -I.  -I./cpu_map -I./defaults
+
+OBJS		+= settings.o
 
 include ../../Makefile.include
+
+LDLIBS += -lm 
 
