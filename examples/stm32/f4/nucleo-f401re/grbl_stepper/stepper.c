@@ -58,6 +58,10 @@
 #define AMASS_LEVEL2 (F_CPU/4000) // Over-drives ISR (x4)
 #define AMASS_LEVEL3 (F_CPU/2000) // Over-drives ISR (x8)
 
+// Declare system global variable structure
+system_t sys;
+
+uint32_t debug_counter = 0;
 
 // Stores the planner block Bresenham algorithm execution data for the segments in the segment 
 // buffer. Normally, this buffer is partially in-use, but, for the worst case scenario, it will
@@ -244,6 +248,7 @@ void st_wake_up()
     #ifdef NUCLEO
     /* Enable TIM1 Stepper Driver Interrupt. */
     timer_enable_irq(TIM1, TIM_DIER_CC1IE); /** Capture/compare 1 interrupt enable */
+    timer_enable_counter(TIM1); /* Counter enable. */
     #else
     // Enable Stepper Driver Interrupt
     TIMSK1 |= (1<<OCIE1A);
@@ -258,6 +263,7 @@ void st_go_idle(void)
   #ifdef NUCLEO
   /* Disable TIM1 Stepper Driver Interrupt. */
   timer_disable_irq(TIM1, TIM_DIER_CC1IE); /** Capture/compare 1 interrupt enable */
+  timer_set_prescaler(TIM1, 0);// Reset clock to no prescaling, enabling is done before.
   #else
   TIMSK1 &= ~(1<<OCIE1A); // Disable Timer1 interrupt
   TCCR1B = (TCCR1B & ~((1<<CS12) | (1<<CS11))) | (1<<CS10); // Reset clock to no prescaling.
@@ -395,7 +401,7 @@ ISR(TIMER1_COMPA_vect)
 
       #ifdef NUCLEO
 	  	  #ifndef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
-          // To BE DONE: OMITTED FOR NOW
+      timer_set_prescaler(TIM1, st.exec_segment->prescaler);
 		  #endif
       #else
       #ifndef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
@@ -515,6 +521,7 @@ ISR(TIMER1_COMPA_vect)
 //only an interrupt line is available for both overflow and output compare events, so one isr is used
 void tim2_isr(void)
 {
+	debug_counter++;
     // This interrupt is enabled by ISR_TIMER1_COMPAREA when it sets the motor port bits to execute
     // a step. This ISR resets the motor port after a short period (settings.pulse_microseconds) 
     // completing one step cycle.
@@ -1326,8 +1333,6 @@ void fill_fake_block_segment()
       }
 }
 
-// Declare system global variable structure
-system_t sys;
 
 int main(void)
 {
@@ -1348,8 +1353,11 @@ int main(void)
 	sys.suspend = false;
 	sys.soft_limit = false;
 
+	sys.state = STATE_CYCLE;
 	fill_fake_block_segment();
-	//st_prep_buffer();
+	//st_prep_buffer(); // Initialize step segment buffer before beginning cycle.
+	st_wake_up();
+
 
     while(1);
     return 0;

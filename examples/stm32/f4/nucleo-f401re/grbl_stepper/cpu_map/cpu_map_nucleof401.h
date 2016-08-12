@@ -44,6 +44,7 @@
 #define STEP_X_PORT       GPIOA_ODR
 #define X_STEP_BIT        10 // NucleoF401 Digital PA10
 #define STEP_MASK_X_DDR   (1<<(X_STEP_BIT*2)) // All (step bits*2) because the direction/mode has 2 bits
+#define STEP_X_DDR_RESET_MASK   (0x3<<(X_STEP_BIT*2))
 #define STEP_MASK_X       (1<<X_STEP_BIT)     // X step mask bit
 
 #define STEP_YZ_DDR       GPIOB_MODER
@@ -51,20 +52,23 @@
 #define Y_STEP_BIT        3 // NucleoF401 Digital PB3
 #define Z_STEP_BIT        5 // NucleoF401 Digital PB5
 #define STEP_MASK_YZ_DDR  ((1<<(Y_STEP_BIT*2))|(1<<(Z_STEP_BIT*2))) // All (step bits*2) because the direction/mode has 2 bits
+#define STEP_YZ_DDR_RESET_MASK  ((0x3<<(Y_STEP_BIT*2))|(0x3<<(Z_STEP_BIT*2)))
 #define STEP_MASK_YZ      ((1<<Y_STEP_BIT)|(1<<Z_STEP_BIT))         // Y-Z step mask bits
 
 // Define step direction output pins. NOTE: All direction pins must be on the same port.
 #define DIRECTION_Z_DDR       GPIOA_MODER
 #define DIRECTION_Z_PORT      GPIOA_ODR
 #define Z_DIRECTION_BIT       8   // NucleoF401 Digital PA8
-#define DIRECTION_MASK_Z_DDR  (1<<(X_DIRECTION_BIT*2)) // Z DIR Mask direction bits
-#define DIRECTION_MASK_Z      ((1<<Y_DIRECTION_BIT)|(1<<Z_DIRECTION_BIT)) // Z DIR MASK bit
+#define DIRECTION_MASK_Z_DDR  (1<<(Z_DIRECTION_BIT*2)) // Z DIR Mask direction bits
+#define DIRECTION_Z_DDR_RESET_MASK  (0x3<<(Z_DIRECTION_BIT*2)) // Z DIR Mask direction bits
+#define DIRECTION_MASK_Z      (1<<Z_DIRECTION_BIT) // Z DIR MASK bit
 
 #define DIRECTION_XY_DDR       GPIOB_MODER
 #define DIRECTION_XY_PORT      GPIOB_ODR
 #define X_DIRECTION_BIT        4  // NucleoF401 Digital PB4
 #define Y_DIRECTION_BIT        10 // NucleoF401 Digital PB10
 #define DIRECTION_MASK_XY_DDR  ((1<<(X_DIRECTION_BIT*2))|(1<<(Y_DIRECTION_BIT*2))) // All direction bits
+#define DIRECTION_XY_DDR_RESET_MASK  ((0x3<<(X_DIRECTION_BIT*2))|(0x3<<(Y_DIRECTION_BIT*2))) // All direction bits
 #define DIRECTION_MASK_XY      ((1<<X_DIRECTION_BIT)|(1<<Y_DIRECTION_BIT))         // XY DIR MASK bits
 
 // Define stepper driver enable/disable output pin.
@@ -153,12 +157,16 @@
 
 #define SET_STEP_DDR \
   do { \
+    STEP_X_DDR &= ~STEP_X_DDR_RESET_MASK; \
+    STEP_YZ_DDR &= ~STEP_YZ_DDR_RESET_MASK; \
     STEP_X_DDR |= STEP_MASK_X_DDR; \
     STEP_YZ_DDR |= STEP_MASK_YZ_DDR; \
   } while (0)
 
 #define SET_DIRECTION_DDR \
   do { \
+    DIRECTION_XY_DDR &= ~DIRECTION_XY_DDR_RESET_MASK; \
+    DIRECTION_Z_DDR &= ~DIRECTION_Z_DDR_RESET_MASK; \
     DIRECTION_XY_DDR |= DIRECTION_MASK_XY_DDR; \
     DIRECTION_Z_DDR |= DIRECTION_MASK_Z_DDR; \
   } while (0)    
