@@ -175,7 +175,25 @@ typedef struct {
 static st_prep_t prep;
 
 /*Fill block/segment buffers for test purpose*/
-void fill_fake_block_segment(void);
+void fill_fake_prep_buffer(uint16_t fake_direction_bits,
+							uint32_t fake_steps_X_AXIS,
+							uint32_t fake_steps_Y_AXIS,
+							uint32_t fake_steps_Z_AXIS,
+							uint32_t fake_step_event_count);
+
+
+void delay_1_ms()
+{
+	uint32_t counter = F_CPU/1000;
+	while(counter--)
+	{continue;}
+}
+// Delays variable defined milliseconds. Compiler compatibility fix for _delay_ms(),
+// which only accepts constants in future compiler releases.
+void delay_ms(uint16_t ms)
+{
+  while ( ms-- ) { delay_1_ms(); }
+}
 
 
 /*    BLOCK VELOCITY PROFILE DEFINITION 
@@ -272,7 +290,7 @@ void st_go_idle(void)
   
   #ifdef NUCLEO
   //TO BE DONE
-  #else
+//  #else
   // Set stepper driver idle state, disabled or enabled, depending on settings and circumstances.
   bool pin_state = false; // Keep enabled.
   
@@ -439,7 +457,7 @@ ISR(TIMER1_COMPA_vect)
       // Segment buffer empty. Shutdown.
       st_go_idle();
       #ifdef NUCLEO
-      // TO BE CORRECTED: CLI operation here!!!
+      // TOBE CORRECTED: CLI operation here!!!
       #else
       bit_true_atomic(sys_rt_exec_state,EXEC_CYCLE_STOP); // Flag main program for cycle end
       #endif //NUCLEO
@@ -450,7 +468,7 @@ ISR(TIMER1_COMPA_vect)
   
   // Check probing state.
   #ifdef NUCLEO
-  //TO BE DONE
+  //TOBE DONE
   #else
   probe_state_monitor();
   #endif //NUCLEO
@@ -1067,29 +1085,60 @@ void st_prep_buffer()
 #endif
 
 /*Fill block/segment buffers for test purpose*/
-void fill_fake_block_segment()
+void fill_fake_prep_buffer(uint16_t fake_direction_bits,
+		                     uint32_t fake_steps_X_AXIS,
+							 uint32_t fake_steps_Y_AXIS,
+							 uint32_t fake_steps_Z_AXIS,
+							 uint32_t fake_step_event_count)
 {
+	//uint16_t fake_direction_bits = 0x510;//test dir bit@1 for nucleo
+	//uint32_t fake_steps_X_AXIS = 30;
+	//uint32_t fake_steps_Y_AXIS = 0;
+	//uint32_t fake_steps_Z_AXIS = 0;
+	//uint32_t fake_step_event_count = 0;
+	
+	float fake_max_entry_speed_sqr = 100;
+	float fake_max_junction_speed_sqr = 225;
+	float fake_nominal_speed_sqr = 225;     
+	
+	float fake_millimeters = 67.5;
+	float fake_acceleration = 0.5;
+	float fake_entry_speed_sqr = 100;
+	
+	
+	// Increment stepper common data index to store new planner block data. 
+	if ( ++prep.st_block_index == (SEGMENT_BUFFER_SIZE-1) ) { prep.st_block_index = 0; }
+	
 	//block buffer
-	st_prep_block = &st_block_buffer[0];
-	st_prep_block->direction_bits = 0x510; //test dir bit@1 for nucleo
+	st_prep_block = &st_block_buffer[prep.st_block_index];
+	st_prep_block->direction_bits = fake_direction_bits;
 
-	st_prep_block->steps[X_AXIS] = 30;
-	st_prep_block->steps[Y_AXIS] = 20;
-	st_prep_block->steps[Z_AXIS] = 10;
-	st_prep_block->step_event_count = 30;//pl_block->step_event_count;
-
+	#ifndef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
+	st_prep_block->steps[X_AXIS] = fake_steps_X_AXIS;//pl_block->steps[X_AXIS];
+	st_prep_block->steps[Y_AXIS] = fake_steps_Y_AXIS;//pl_block->steps[Y_AXIS];
+	st_prep_block->steps[Z_AXIS] = fake_steps_Z_AXIS;//pl_block->steps[Z_AXIS];
+	st_prep_block->step_event_count = fake_step_event_count;//pl_block->step_event_count;
+	#else
+	// With AMASS enabled, simply bit-shift multiply all Bresenham data by the max AMASS 
+	// level, such that we never divide beyond the original data anywhere in the algorithm.
+	// If the original data is divided, we can lose a step from integer roundoff.
+	st_prep_block->steps[X_AXIS] = fake_steps_X_AXIS/*pl_block->steps[X_AXIS]*/ << MAX_AMASS_LEVEL;
+	st_prep_block->steps[Y_AXIS] = fake_steps_Y_AXIS/*pl_block->steps[Y_AXIS]*/ << MAX_AMASS_LEVEL;
+	st_prep_block->steps[Z_AXIS] = fake_steps_Z_AXIS/*pl_block->steps[Z_AXIS]*/ << MAX_AMASS_LEVEL;
+	st_prep_block->step_event_count = fake_step_event_count/*pl_block->step_event_count*/ << MAX_AMASS_LEVEL;
+	#endif
+	
 	//segment buffer
     prep.flag_partial_block = true; // set flag
-    prep.st_block_index = 0;
 
     // Initialize segment buffer data for generating the segments.
-	prep.steps_remaining = 30;//pl_block->step_event_count;
-	prep.step_per_mm = 30/67.5;//prep.steps_remaining/pl_block->millimeters;
+	prep.steps_remaining = fake_step_event_count;//pl_block->step_event_count;
+	prep.step_per_mm = prep.steps_remaining/fake_millimeters;//pl_block->millimeters;
 	prep.req_mm_increment = REQ_MM_INCREMENT_SCALAR/prep.step_per_mm;
 
 	prep.dt_remainder = 0.0; // Reset for new planner block
 
-	prep.current_speed = sqrt(100);//(pl_block->entry_speed_sqr);
+	prep.current_speed = sqrt(fake_entry_speed_sqr);//(pl_block->entry_speed_sqr);
 
 	/* ---------------------------------------------------------------------------------
 	 Compute the velocity profile of a new planner block based on its entry and exit
@@ -1098,38 +1147,38 @@ void fill_fake_block_segment()
 	 hold, override the planner velocities and decelerate to the target exit speed.
 	*/
 	prep.mm_complete = 0.0; // Default velocity profile complete at 0.0mm from end of block.
-	float inv_2_accel = 0.5/0.5;//pl_block->acceleration;
+	float inv_2_accel = 0.5/fake_acceleration;//pl_block->acceleration;
 
 	// [Normal Operation]
 	// Compute or recompute velocity profile parameters of the prepped planner block.
 	prep.ramp_type = RAMP_ACCEL; // Initialize as acceleration ramp.
-	prep.accelerate_until = 67.5;//pl_block->millimeters;
-	prep.exit_speed = 10;//plan_get_exec_block_exit_speed();
+	prep.accelerate_until = fake_millimeters;//pl_block->millimeters;
+	prep.exit_speed = 0;//plan_get_exec_block_exit_speed();
 	float exit_speed_sqr = prep.exit_speed*prep.exit_speed;
 	float intersect_distance =
-			0.5*(67.5/*pl_block->millimeters*/+inv_2_accel*(0.0/*pl_block->entry_speed_sqr*/-exit_speed_sqr));
+			0.5*(fake_millimeters/*pl_block->millimeters*/+inv_2_accel*(fake_entry_speed_sqr/*pl_block->entry_speed_sqr*/-exit_speed_sqr));
 
 	if (intersect_distance > 0.0) {
-		if (intersect_distance < 67.5/*pl_block->millimeters*/) { // Either trapezoid or triangle types
+		if (intersect_distance < fake_millimeters/*pl_block->millimeters*/) { // Either trapezoid or triangle types
 			// NOTE: For acceleration-cruise and cruise-only types, following calculation will be 0.0.
-			prep.decelerate_after = inv_2_accel*(225/*pl_block->nominal_speed_sqr*/-exit_speed_sqr);
+			prep.decelerate_after = inv_2_accel*(fake_nominal_speed_sqr/*pl_block->nominal_speed_sqr*/-exit_speed_sqr);
 			if (prep.decelerate_after < intersect_distance) { // Trapezoid type
-				prep.maximum_speed = sqrt(225/*pl_block->nominal_speed_sqr*/);
-				if (0/*pl_block->entry_speed_sqr*/ == 225/*pl_block->nominal_speed_sqr*/) {
+				prep.maximum_speed = sqrt(fake_nominal_speed_sqr/*pl_block->nominal_speed_sqr*/);
+				if (fake_entry_speed_sqr/*pl_block->entry_speed_sqr*/ == fake_nominal_speed_sqr/*pl_block->nominal_speed_sqr*/) {
 					// Cruise-deceleration or cruise-only type.
 					prep.ramp_type = RAMP_CRUISE;
 				} else {
 					// Full-trapezoid or acceleration-cruise types
-					prep.accelerate_until -= inv_2_accel*(225-0/*pl_block->nominal_speed_sqr-pl_block->entry_speed_sqr*/);
+					prep.accelerate_until -= inv_2_accel*(fake_nominal_speed_sqr-fake_entry_speed_sqr/*pl_block->nominal_speed_sqr-pl_block->entry_speed_sqr*/);
 				}
 			} else { // Triangle type
 				prep.accelerate_until = intersect_distance;
 				prep.decelerate_after = intersect_distance;
-				prep.maximum_speed = sqrt(2.0*0.5/*pl_block->acceleration*/*intersect_distance+exit_speed_sqr);
+				prep.maximum_speed = sqrt(2.0*fake_acceleration/*pl_block->acceleration*/*intersect_distance+exit_speed_sqr);
 			}
 			} else { // Deceleration-only type
 				prep.ramp_type = RAMP_DECEL;
-				// prep.decelerate_after = pl_block->millimeters;
+				// prep.decelerate_after = fake_millimeters;//pl_block->millimeters;
 				prep.maximum_speed = prep.current_speed;
 			}
 		} else { // Acceleration-only type
@@ -1163,19 +1212,19 @@ void fill_fake_block_segment()
 	float time_var = dt_max; // Time worker variable
 	float mm_var; // mm-Distance worker variable
 	float speed_var; // Speed worker variable
-	float mm_remaining = 67.5;//pl_block->millimeters; // New segment distance from end of block.
+	float mm_remaining = fake_millimeters;//pl_block->millimeters; // New segment distance from end of block.
 	float minimum_mm = mm_remaining-prep.req_mm_increment; // Guarantee at least one step.
 
     do {
       switch (prep.ramp_type) {
         case RAMP_ACCEL:
           // NOTE: Acceleration ramp only computes during first do-while loop.
-          speed_var = 0.5/*pl_block->acceleration*/*time_var;
+          speed_var = fake_acceleration/*pl_block->acceleration*/*time_var;
           mm_remaining -= time_var*(prep.current_speed + 0.5*speed_var);
           if (mm_remaining < prep.accelerate_until) { // End of acceleration ramp.
             // Acceleration-cruise, acceleration-deceleration ramp junction, or end of block.
             mm_remaining = prep.accelerate_until; // NOTE: 0.0 at EOB
-            time_var = 2.0*(67.5/*pl_block->millimeters*/-mm_remaining)/(prep.current_speed+prep.maximum_speed);
+            time_var = 2.0*(fake_millimeters/*pl_block->millimeters*/-mm_remaining)/(prep.current_speed+prep.maximum_speed);
             if (mm_remaining == prep.decelerate_after) { prep.ramp_type = RAMP_DECEL; }
             else { prep.ramp_type = RAMP_CRUISE; }
             prep.current_speed = prep.maximum_speed;
@@ -1199,7 +1248,7 @@ void fill_fake_block_segment()
           break;
         default: // case RAMP_DECEL:
           // NOTE: mm_var used as a misc worker variable to prevent errors when near zero speed.
-          speed_var = 0.5/*pl_block->acceleration*/*time_var; // Used as delta speed (mm/min)
+          speed_var = fake_acceleration/*pl_block->acceleration*/*time_var; // Used as delta speed (mm/min)
           if (prep.current_speed > speed_var) { // Check if at or below zero speed.
             // Compute distance from end of segment to end of block.
             mm_var = mm_remaining - time_var*(prep.current_speed - 0.5*speed_var); // (mm)
@@ -1226,9 +1275,6 @@ void fill_fake_block_segment()
       }
     } while (mm_remaining > prep.mm_complete); // **Complete** Exit loop. Profile complete.
 
-
-
-
     /* -----------------------------------------------------------------------------------
        Compute segment step rate, steps to execute, and apply necessary rate corrections.
        NOTE: Steps are computed by direct scalar conversion of the millimeter distance
@@ -1252,7 +1298,7 @@ void fill_fake_block_segment()
         prep.current_speed = 0.0; // NOTE: (=0.0) Used to indicate completed segment calcs for hold.
         prep.dt_remainder = 0.0;
         prep.steps_remaining = n_steps_remaining;
-        //pl_block->millimeters = prep.steps_remaining/prep.step_per_mm; // Update with full steps.
+        /*pl_block->*/fake_millimeters = prep.steps_remaining/prep.step_per_mm; // Update with full steps.
         //plan_cycle_reinitialize();
         return; // Segment not generated, but current step data still retained.
       }
@@ -1311,7 +1357,7 @@ void fill_fake_block_segment()
       // Setup initial conditions for next segment.
       if (mm_remaining > prep.mm_complete) {
         // Normal operation. Block incomplete. Distance remaining in block to be executed.
-        //pl_block->millimeters = mm_remaining;
+        /*pl_block->*/fake_millimeters = mm_remaining;
         prep.steps_remaining = steps_remaining;
       } else {
         // End of planner block or forced-termination. No more distance to be executed.
@@ -1322,7 +1368,7 @@ void fill_fake_block_segment()
           prep.current_speed = 0.0; // NOTE: (=0.0) Used to indicate completed segment calcs for hold.
           prep.dt_remainder = 0.0;
           prep.steps_remaining = ceil(steps_remaining);
-          //pl_block->millimeters = prep.steps_remaining/prep.step_per_mm; // Update with full steps.
+          /*pl_block->*/fake_millimeters = prep.steps_remaining/prep.step_per_mm; // Update with full steps.
           //plan_cycle_reinitialize();
           return; // Bail!
         } else { // End of planner block
@@ -1354,11 +1400,41 @@ int main(void)
 	sys.soft_limit = false;
 
 	sys.state = STATE_CYCLE;
-	fill_fake_block_segment();
-	//st_prep_buffer(); // Initialize step segment buffer before beginning cycle.
-	st_wake_up();
 
+	uint32_t counter = 0;
+	uint16_t temp_dir_bits;
+	uint32_t steps_x;
+	uint32_t steps_y;
+	uint32_t steps_z;
+	uint32_t steps_event_count;
+	while(1){
+		temp_dir_bits = 0x510;
+		steps_x = 0;
+		steps_y = 0;
+		steps_z = 0;
 
-    while(1);
+		switch(counter%3)
+		{
+		case 0:
+			steps_x = 100;
+			break;
+		case 1:
+			steps_y = 100;
+			break;
+		case 2:
+			steps_z = 100;
+			break;
+		default:
+			break;
+		}
+		steps_event_count = 0;//counter % 5;
+		counter++;
+
+		fill_fake_prep_buffer(temp_dir_bits,steps_x,steps_y,steps_z,steps_event_count);
+		//st_prep_buffer(); // Initialize step segment buffer before beginning cycle.
+		st_wake_up();
+	}
+
+   // while(1);
     return 0;
 }
