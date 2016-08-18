@@ -179,8 +179,8 @@
 
 #define SET_STEPS(stepbits) \
   do { \
-    STEP_X_PORT  = (st.step_bits & STEP_MASK_X); \
-    STEP_YZ_PORT = (st.step_bits & STEP_MASK_YZ); \
+    STEP_X_PORT  = (stepbits & STEP_MASK_X); \
+    STEP_YZ_PORT = (stepbits & STEP_MASK_YZ); \
   } while (0)
 	  
 #define SAVE_STEP_BITS(stepbits) \
