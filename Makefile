@@ -72,14 +72,19 @@ $(EXAMPLE_DIRS): lib
 	@printf "  BUILD   $@\n";
 	$(Q)$(MAKE) --directory=$@ OPENCM3_DIR=$(OPENCM3_DIR) $(EXAMPLE_RULES)
 
-examples: $(EXAMPLE_DIRS)
+GRBL_PORT_DIRS:=$(sort $(dir $(wildcard $(addsuffix /*/*/Makefile,$(addprefix grbl_port/,$(TARGETS))))))
+$(GRBL_PORT_DIRS): lib
+	@printf "  BUILD   $@\n";
+	$(Q)$(MAKE) --directory=$@ OPENCM3_DIR=$(OPENCM3_DIR) $(EXAMPLE_RULES)
+	
+examples: $(EXAMPLE_DIRS) $(GRBL_PORT_DIRS)
 	$(Q)true
 
-clean: $(EXAMPLE_DIRS:=.clean) styleclean
+clean: $(EXAMPLE_DIRS:=.clean) $(GRBL_PORT_DIRS:=.clean) styleclean
 	$(Q)$(MAKE) -C libopencm3 clean
 
-stylecheck: $(EXAMPLE_DIRS:=.stylecheck)
-styleclean: $(EXAMPLE_DIRS:=.styleclean)
+stylecheck: $(EXAMPLE_DIRS:=.stylecheck) $(GRBL_PORT_DIRS:=.stylecheck)
+styleclean: $(EXAMPLE_DIRS:=.styleclean) $(GRBL_PORT_DIRS:=.styleclean)
 
 
 %.clean:
