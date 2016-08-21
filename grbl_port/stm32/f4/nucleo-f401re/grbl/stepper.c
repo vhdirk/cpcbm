@@ -1379,13 +1379,14 @@ void fill_fake_prep_buffer(uint16_t fake_direction_bits,
 
 int main(void)
 {
-
 	//settings_init(); // Load Grbl settings from EEPROM
 	settings_restore(SETTINGS_RESTORE_ALL);
 
+	serial_init();
+	report_init_message();
+
 	stepper_init();  // Configure stepper pins and interrupt timers
 	//system_init();   // Configure pinout pins and pin-change interrupt
-
 
 	st_reset();
 
