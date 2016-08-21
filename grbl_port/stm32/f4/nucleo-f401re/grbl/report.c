@@ -28,7 +28,10 @@
 
 #include "grbl.h"
 
+/* PSTR arduino substituted momentarily */
+#ifdef NUCLEO
 #define PSTR(s) s
+#endif
 
 // Handles the primary confirmation protocol response for streaming interfaces and human-feedback.
 // For every incoming line, this method responds with an 'ok' for a successful command or an 
@@ -282,6 +285,7 @@ void report_probe_parameters()
   printPgmString(PSTR("]\r\n"));
 }
 
+//TODO: remove this if 0
 #if 0
 // Prints Grbl NGC parameters (coordinate offsets, probing)
 void report_ngc_parameters()
