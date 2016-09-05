@@ -53,7 +53,7 @@
 // #include "coolant_control.h"
 // #include "eeprom.h"
 // #include "gcode.h"
-// #include "limits.h"
+#include "limits.h"
 // #include "motion_control.h"
 #include "planner.h"
 #include "print.h"

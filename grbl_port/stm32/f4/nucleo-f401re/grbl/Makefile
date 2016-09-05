@@ -23,7 +23,7 @@ LDSCRIPT = ../nucleo-f401re.ld
 
 CPPFLAGS += -I.  -I./cpu_map -I./defaults
 
-OBJS		+= settings.o serial.o system.o print.o report.o
+OBJS		+= settings.o serial.o system.o print.o report.o limits.o
 
 include ../../Makefile.include
 

@@ -21,6 +21,7 @@
 /* This cpu_map file serves as a central pin mapping settings file for AVR Mega 2560 */
 
 #include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/exti.h>
 
 #ifdef GRBL_PLATFORM
 #error "cpu_map already defined: GRBL_PLATFORM=" GRBL_PLATFORM
@@ -78,20 +79,31 @@
 #define STEPPERS_DISABLE_MASK_DDR   (1<<(STEPPERS_DISABLE_BIT*2))
 #define STEPPERS_DISABLE_MASK       (1<<STEPPERS_DISABLE_BIT)
 
-/* TO BE DONE: CORRECT THE FOLLOWING CONFIGURATION FOR NUCLEO PINOUT */
-
 // Define homing/hard limit switch input pins and limit interrupt vectors. 
 // NOTE: All limit bit pins must be on the same port
-#define LIMIT_DDR       DDRB
-#define LIMIT_PORT      PORTB
-#define LIMIT_PIN       PINB
-#define X_LIMIT_BIT     4 // MEGA2560 Digital Pin 10
-#define Y_LIMIT_BIT     5 // MEGA2560 Digital Pin 11
-#define Z_LIMIT_BIT     6 // MEGA2560 Digital Pin 12
-#define LIMIT_INT       PCIE0  // Pin change interrupt enable pin
-#define LIMIT_INT_vect  PCINT0_vect 
-#define LIMIT_PCMSK     PCMSK0 // Pin change interrupt register
-#define LIMIT_MASK ((1<<X_LIMIT_BIT)|(1<<Y_LIMIT_BIT)|(1<<Z_LIMIT_BIT)) // All limit bits
+#define LIMIT_XZ_DDR              GPIOC_MODER
+#define LIMIT_XZ_PORT             GPIOC_ODR
+#define LIMIT_XZ_PIN              GPIOC_IDR
+#define LIMIT_XZ_PU               GPIOC_PUPDR
+#define X_LIMIT_BIT               7 // NucleoF401 Digital PC7
+#define Z_LIMIT_BIT               8 // NucleoF401 Digital PC8
+#define LIMIT_XZ_PU_MASK          ((0x1<<(X_LIMIT_BIT*2))|(0x1<<(Z_LIMIT_BIT*2))) // X-Z limit pull-up mask
+#define LIMIT_XZ_PU_RESET_MASK   ((0x3<<(X_LIMIT_BIT*2))|(0x3<<(Z_LIMIT_BIT*2))) // X-Z limit dir mask
+#define LIMIT_XZ_MASK             ((1<<X_LIMIT_BIT)|(1<<Z_LIMIT_BIT)) // X-Z limit bits
+
+#define LIMIT_Y_DDR               GPIOB_MODER
+#define LIMIT_Y_PORT              GPIOB_ODR
+#define LIMIT_Y_PIN               GPIOB_IDR
+#define LIMIT_Y_PU                GPIOB_PUPDR
+#define Y_LIMIT_BIT               6 // NucleoF401 Digital PB6
+#define LIMIT_INT                 NVIC_EXTI9_5_IRQ  // Pin change interrupt enable pin
+#define LIMIT_INT_vect            (EXTI6 | EXTI7 | EXTI8) 
+#define LIMIT_PCMSK               NVIC_EXTI9_5_IRQ // Pin change interrupt register
+#define LIMIT_Y_PU_MASK           (0x1<<(Y_LIMIT_BIT*2)) // X-Z limit pull-up mask
+#define LIMIT_Y_PU_RESET_MASK    ((0x3<<(Y_LIMIT_BIT*2))) // Y limit dir mask
+#define LIMIT_Y_MASK              (1<<Y_LIMIT_BIT) // Y limit bits
+
+/* TO BE DONE: CORRECT THE FOLLOWING CONFIGURATION FOR NUCLEO PINOUT */
 
 // Define spindle enable and spindle direction output pins.
 #define SPINDLE_ENABLE_DDR      DDRH
@@ -191,5 +203,30 @@
     DIRECTION_Z_PORT  = (DIRECTION_Z_PORT & ~DIRECTION_MASK_Z) | (dirbits & DIRECTION_MASK_Z); \
     DIRECTION_XY_PORT = (DIRECTION_XY_PORT & ~DIRECTION_MASK_XY) | (dirbits & DIRECTION_MASK_XY); \
   } while (0)  
+	  
+/* set limits pins as inputs */
+#define SET_LIMITS_DDR \
+  do { \
+    LIMIT_XZ_DDR &= ~LIMIT_XZ_PU_RESET_MASK; \
+    LIMIT_Y_DDR  &= ~LIMIT_Y_PU_RESET_MASK; \
+  } while (0)
+
+/* unset pull-up for limits pin */
+#define UNSET_LIMITS_PU \
+  do { \
+    LIMIT_XZ_PU  &= ~LIMIT_XZ_PU_RESET_MASK; \
+    LIMIT_Y_PU   &= ~LIMIT_Y_PU_RESET_MASK; \
+  } while (0)
+	  
+/* set pull-up for limits pin */
+#define SET_LIMITS_PU \
+  do { \
+    LIMIT_XZ_PU  &= ~LIMIT_XZ_PU_RESET_MASK; \
+    LIMIT_Y_PU   &= ~LIMIT_Y_PU_RESET_MASK; \
+    LIMIT_XZ_PU  |= LIMIT_XZ_PU_MASK; \
+    LIMIT_Y_PU   |= LIMIT_Y_PU_MASK; \
+  } while (0)
+
+
 
 	  
