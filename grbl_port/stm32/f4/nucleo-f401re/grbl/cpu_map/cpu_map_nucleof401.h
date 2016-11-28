@@ -96,12 +96,13 @@
 #define LIMIT_Y_PIN               GPIOB_IDR
 #define LIMIT_Y_PU                GPIOB_PUPDR
 #define Y_LIMIT_BIT               6 // NucleoF401 Digital PB6
-#define LIMIT_INT                 NVIC_EXTI9_5_IRQ  // Pin change interrupt enable pin
-#define LIMIT_INT_vect            (EXTI6 | EXTI7 | EXTI8) 
-#define LIMIT_PCMSK               NVIC_EXTI9_5_IRQ // Pin change interrupt register
 #define LIMIT_Y_PU_MASK           (0x1<<(Y_LIMIT_BIT*2)) // X-Z limit pull-up mask
 #define LIMIT_Y_PU_RESET_MASK    ((0x3<<(Y_LIMIT_BIT*2))) // Y limit dir mask
 #define LIMIT_Y_MASK              (1<<Y_LIMIT_BIT) // Y limit bits
+/* Interrupt defines for LIMIT PINS */
+#define LIMIT_INT                 NVIC_EXTI9_5_IRQ  // Pin change interrupt enable pin
+#define LIMIT_INT_vect            (EXTI6 | EXTI7 | EXTI8) 
+#define LIMIT_PCMSK               NVIC_EXTI9_5_IRQ // Pin change interrupt register
 
 /* TO BE DONE: CORRECT THE FOLLOWING CONFIGURATION FOR NUCLEO PINOUT */
 
@@ -127,24 +128,82 @@
 
 // Define user-control CONTROLs (cycle start, reset, feed hold) input pins.
 // NOTE: All CONTROLs pins must be on the same port and not on a port with other input pins (limits).
-#define CONTROL_DDR       DDRK
-#define CONTROL_PIN       PINK
-#define CONTROL_PORT      PORTK
-#define RESET_BIT         0  // MEGA2560 Analog Pin 8
-#define FEED_HOLD_BIT     1  // MEGA2560 Analog Pin 9
-#define CYCLE_START_BIT   2  // MEGA2560 Analog Pin 10
-#define SAFETY_DOOR_BIT   3  // MEGA2560 Analog Pin 11
-#define CONTROL_INT       PCIE2  // Pin change interrupt enable pin
-#define CONTROL_INT_vect  PCINT2_vect
-#define CONTROL_PCMSK     PCMSK2 // Pin change interrupt register
-#define CONTROL_MASK ((1<<RESET_BIT)|(1<<FEED_HOLD_BIT)|(1<<CYCLE_START_BIT)|(1<<SAFETY_DOOR_BIT))
-#define CONTROL_INVERT_MASK CONTROL_MASK // May be re-defined to only invert certain control pins.
+#define RESET_CONTROL_DDR               GPIOB_MODER
+#define RESET_CONTROL_PORT              GPIOB_ODR
+#define RESET_CONTROL_PIN               GPIOB_IDR
+#define RESET_CONTROL_PU                GPIOB_PUPDR
+#define RESET_BIT                       2 // NucleoF401 Digital PB2
+#define RESET_CONTROL_PU_MASK           (0x1<<(RESET_BIT*2)) // Reset pull-up mask
+#define RESET_CONTROL_PU_RESET_MASK     (0x3<<(RESET_BIT*2)) // Reset dir mask
+#define RESET_CONTROL_MASK              (1<<RESET_BIT)
+/* Interrupt defines for RESET CONTROL PIN */
+#define RESET_CONTROL_INT               NVIC_EXTI2_IRQ  // Pin change interrupt enable pin
+#define RESET_CONTROL_INT_vect          (EXTI2) 
+#define RESET_CONTROL_PCMSK             NVIC_EXTI2_IRQ // Pin change interrupt register
+
+#define FEED_HOLD_CONTROL_DDR           GPIOA_MODER
+#define FEED_HOLD_CONTROL_PORT          GPIOA_ODR
+#define FEED_HOLD_CONTROL_PIN           GPIOA_IDR
+#define FEED_HOLD_CONTROL_PU            GPIOA_PUPDR
+#define FEED_HOLD_BIT                   1 // NucleoF401 Digital PA1
+#define FEED_HOLD_PU_MASK               (0x1<<(FEED_HOLD_BIT*2)) // Feed Hold pull-up mask
+#define FEED_HOLD_PU_RESET_MASK         (0x3<<(FEED_HOLD_BIT*2)) // Feed Hold pull-up reset mask
+#define FEED_HOLD_MASK                  (1<<FEED_HOLD_BIT)
+/* Interrupt defines for FEED-HOLD CONTROL PIN */
+#define FEED_HOLD_CONTROL_INT           NVIC_EXTI1_IRQ  // Pin change interrupt enable pin
+#define FEED_HOLD_CONTROL_INT_vect      (EXTI1) 
+#define FEED_HOLD_CONTROL_PCMSK         NVIC_EXTI1_IRQ // Pin change interrupt register
+
+#define CYCLE_START_CONTROL_DDR           GPIOA_MODER
+#define CYCLE_START_CONTROL_PORT          GPIOA_ODR
+#define CYCLE_START_CONTROL_PIN           GPIOA_IDR
+#define CYCLE_START_CONTROL_PU            GPIOA_PUPDR
+#define CYCLE_START_BIT                   4 // NucleoF401 Digital PA4
+#define CYCLE_START_PU_MASK               (0x1<<(CYCLE_START_BIT*2)) // CYCLE_START pull-up mask
+#define CYCLE_START_PU_RESET_MASK         (0x3<<(CYCLE_START_BIT*2)) // CYCLE_START dir mask
+#define CYCLE_START_MASK                  (1<<CYCLE_START_BIT)
+/* Interrupt defines for CYCLE START CONTROL PIN */
+#define CYCLE_START_CONTROL_INT           NVIC_EXTI4_IRQ  // Pin change interrupt enable pin
+#define CYCLE_START_CONTROL_INT_vect      (EXTI4) 
+#define CYCLE_START_CONTROL_PCMSK         NVIC_EXTI4_IRQ // Pin change interrupt register
+
+#ifndef ENABLE_SAFETY_DOOR_INPUT_PIN
+#define SAFETY_DOOR_CONTROL_DDR           GPIOA_MODER
+#define SAFETY_DOOR_CONTROL_PORT          GPIOA_ODR
+#define SAFETY_DOOR_CONTROL_PIN           GPIOA_IDR
+#define SAFETY_DOOR_CONTROL_PU            GPIOA_PUPDR
+#define SAFETY_DOOR_BIT                   4 // NucleoF401 Digital PA4
+/* Interrupt defines for SAFETY DOOR CONTROL PIN */
+#define SAFETY_DOOR_CONTROL_INT           NVIC_EXTI4_IRQ  // Pin change interrupt enable pin
+#define SAFETY_DOOR_CONTROL_INT_vect      (EXTI4) 
+#define SAFETY_DOOR_CONTROL_PCMSK         NVIC_EXTI4_IRQ // Pin change interrupt register
+#else
+#define SAFETY_DOOR_CONTROL_DDR           GPIOC_MODER
+#define SAFETY_DOOR_CONTROL_PORT          GPIOC_ODR
+#define SAFETY_DOOR_CONTROL_PIN           GPIOC_IDR
+#define SAFETY_DOOR_CONTROL_PU            GPIOC_PUPDR
+#define SAFETY_DOOR_BIT                   3 // NucleoF401 Digital PC3
+/* Interrupt defines for SAFETY DOOR CONTROL PIN */
+#define SAFETY_DOOR_CONTROL_INT           NVIC_EXTI3_IRQ  // Pin change interrupt enable pin
+#define SAFETY_DOOR_CONTROL_INT_vect      (EXTI3) 
+#define SAFETY_DOOR_CONTROL_PCMSK         NVIC_EXTI3_IRQ // Pin change interrupt register
+#endif
+
+#define SAFETY_DOOR_PU_MASK               (0x1<<(CYCLE_START_BIT*2)) // CYCLE_START pull-up mask
+#define SAFETY_DOOR_PU_RESET_MASK         (0x3<<(CYCLE_START_BIT*2)) // CYCLE_START pull-up reset mask
+#define SAFETY_DOOR_MASK                  (1<<CYCLE_START_BIT)
+
+#define CONTROL_INT_vect  (RESET_CONTROL_INT_vect | FEED_HOLD_CONTROL_INT_vect | CYCLE_START_CONTROL_INT_vect | SAFETY_DOOR_CONTROL_INT_vect)
+
+//#define CONTROL_MASK ((1<<RESET_BIT)|(1<<FEED_HOLD_BIT)|(1<<CYCLE_START_BIT)|(1<<SAFETY_DOOR_BIT))
+//#define CONTROL_INVERT_MASK CONTROL_MASK // May be re-defined to only invert certain control pins.
+
 
 // Define probe switch input pin.
-#define PROBE_DDR       DDRK
-#define PROBE_PIN       PINK
-#define PROBE_PORT      PORTK
-#define PROBE_BIT       7  // MEGA2560 Analog Pin 15
+#define PROBE_DDR       GPIOC_MODER
+#define PROBE_PIN       GPIOC_IDR
+#define PROBE_PORT      GPIOC_ODR
+#define PROBE_BIT       0 // NucleoF401 Digital PC0
 #define PROBE_MASK      (1<<PROBE_BIT)
 
 // Start of PWM & Stepper Enabled Spindle
@@ -217,7 +276,7 @@
     LIMIT_XZ_PU  &= ~LIMIT_XZ_PU_RESET_MASK; \
     LIMIT_Y_PU   &= ~LIMIT_Y_PU_RESET_MASK; \
   } while (0)
-	  
+
 /* set pull-up for limits pin */
 #define SET_LIMITS_PU \
   do { \
@@ -228,5 +287,34 @@
   } while (0)
 
 
+/* set control pins as inputs */
+#define SET_CONTROLS_DDR \
+  do { \
+    RESET_CONTROL_DDR &= ~RESET_CONTROL_PU_RESET_MASK; \
+    FEED_HOLD_CONTROL_DDR  &= ~FEED_HOLD_PU_RESET_MASK; \
+    CYCLE_START_CONTROL_DDR  &= ~CYCLE_START_PU_RESET_MASK; \
+    SAFETY_DOOR_CONTROL_DDR  &= ~SAFETY_DOOR_PU_RESET_MASK; \
+  } while (0)
 
-	  
+/* unset pull-up for controls pin */
+#define UNSET_CONTROLS_PU \
+  do { \
+    RESET_CONTROL_PU &= ~RESET_CONTROL_PU_RESET_MASK; \
+    FEED_HOLD_CONTROL_PU  &= ~FEED_HOLD_PU_RESET_MASK; \
+    CYCLE_START_CONTROL_PU  &= ~CYCLE_START_PU_RESET_MASK; \
+    SAFETY_DOOR_CONTROL_PU  &= ~SAFETY_DOOR_PU_RESET_MASK; \
+  } while (0)
+
+/* set pull-up for controls pin */
+#define SET_CONTROLS_PU \
+  do { \
+    RESET_CONTROL_PU        &= ~RESET_CONTROL_PU_RESET_MASK; \
+    FEED_HOLD_CONTROL_PU    &= ~FEED_HOLD_PU_RESET_MASK; \
+    CYCLE_START_CONTROL_PU  &= ~CYCLE_START_PU_RESET_MASK; \
+    SAFETY_DOOR_CONTROL_PU  &= ~SAFETY_DOOR_PU_RESET_MASK; \
+    RESET_CONTROL_PU        |= RESET_CONTROL_PU_MASK; \
+    FEED_HOLD_CONTROL_PU    |= FEED_HOLD_PU_MASK; \
+    CYCLE_START_CONTROL_PU  |= CYCLE_START_PU_MASK; \
+    SAFETY_DOOR_CONTROL_PU  |= SAFETY_DOOR_PU_MASK; \
+  } while (0)
+
