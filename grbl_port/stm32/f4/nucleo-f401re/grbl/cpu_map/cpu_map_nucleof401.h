@@ -167,17 +167,6 @@
 #define CYCLE_START_CONTROL_INT_vect      (EXTI4) 
 #define CYCLE_START_CONTROL_PCMSK         NVIC_EXTI4_IRQ // Pin change interrupt register
 
-#ifndef ENABLE_SAFETY_DOOR_INPUT_PIN
-#define SAFETY_DOOR_CONTROL_DDR           GPIOA_MODER
-#define SAFETY_DOOR_CONTROL_PORT          GPIOA_ODR
-#define SAFETY_DOOR_CONTROL_PIN           GPIOA_IDR
-#define SAFETY_DOOR_CONTROL_PU            GPIOA_PUPDR
-#define SAFETY_DOOR_BIT                   4 // NucleoF401 Digital PA4
-/* Interrupt defines for SAFETY DOOR CONTROL PIN */
-#define SAFETY_DOOR_CONTROL_INT           NVIC_EXTI4_IRQ  // Pin change interrupt enable pin
-#define SAFETY_DOOR_CONTROL_INT_vect      (EXTI4) 
-#define SAFETY_DOOR_CONTROL_PCMSK         NVIC_EXTI4_IRQ // Pin change interrupt register
-#else
 #define SAFETY_DOOR_CONTROL_DDR           GPIOC_MODER
 #define SAFETY_DOOR_CONTROL_PORT          GPIOC_ODR
 #define SAFETY_DOOR_CONTROL_PIN           GPIOC_IDR
@@ -187,11 +176,10 @@
 #define SAFETY_DOOR_CONTROL_INT           NVIC_EXTI3_IRQ  // Pin change interrupt enable pin
 #define SAFETY_DOOR_CONTROL_INT_vect      (EXTI3) 
 #define SAFETY_DOOR_CONTROL_PCMSK         NVIC_EXTI3_IRQ // Pin change interrupt register
-#endif
 
-#define SAFETY_DOOR_PU_MASK               (0x1<<(CYCLE_START_BIT*2)) // CYCLE_START pull-up mask
-#define SAFETY_DOOR_PU_RESET_MASK         (0x3<<(CYCLE_START_BIT*2)) // CYCLE_START pull-up reset mask
-#define SAFETY_DOOR_MASK                  (1<<CYCLE_START_BIT)
+#define SAFETY_DOOR_PU_MASK               (0x1<<(SAFETY_DOOR_BIT*2)) // SAFETY_DOOR pull-up mask
+#define SAFETY_DOOR_PU_RESET_MASK         (0x3<<(SAFETY_DOOR_BIT*2)) // SAFETY_DOOR pull-up reset mask
+#define SAFETY_DOOR_MASK                  (1<<SAFETY_DOOR_BIT)
 
 #define CONTROL_INT_vect  (RESET_CONTROL_INT_vect | FEED_HOLD_CONTROL_INT_vect | CYCLE_START_CONTROL_INT_vect | SAFETY_DOOR_CONTROL_INT_vect)
 

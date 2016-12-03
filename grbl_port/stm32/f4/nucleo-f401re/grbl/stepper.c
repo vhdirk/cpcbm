@@ -1386,7 +1386,7 @@ int main(void)
 	report_init_message();
 
 	stepper_init();  // Configure stepper pins and interrupt timers
-	//system_init();   // Configure pinout pins and pin-change interrupt
+	system_init();   // Configure pinout pins and pin-change interrupt
 
 	st_reset();
 
