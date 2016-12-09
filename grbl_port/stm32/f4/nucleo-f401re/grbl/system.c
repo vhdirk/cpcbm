@@ -19,6 +19,9 @@
 */
 
 #include "grbl.h"
+#ifdef TEST_NUCLEO_EXTI_PINS
+#include "test_nucleo.h"
+#endif
 
 volatile uint8_t sys_probe_state;   // Probing state value.  Used to coordinate the probing cycle with stepper ISR.
 volatile uint8_t sys_rt_exec_state;  // Global realtime executor bitflag variable for state management. See EXEC bitmasks.
@@ -39,6 +42,10 @@ void system_init()
 	nvic_enable_irq(FEED_HOLD_CONTROL_INT);// Enable control pin Interrupt
 	nvic_enable_irq(CYCLE_START_CONTROL_INT);// Enable control pin Interrupt
 	nvic_enable_irq(SAFETY_DOOR_CONTROL_INT);// Enable control pin Interrupt
+#ifdef TEST_NUCLEO_EXTI_PINS
+    test_initialization();
+#endif
+
 #else
 	CONTROL_DDR &= ~(CONTROL_MASK); // Configure as input pins
   #ifdef DISABLE_CONTROL_PIN_PULL_UP

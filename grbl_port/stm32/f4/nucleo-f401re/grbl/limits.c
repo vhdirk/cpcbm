@@ -20,7 +20,9 @@
 */
   
 #include "grbl.h"
-
+#ifdef TEST_NUCLEO_EXTI_PINS
+#include "test_nucleo.h"
+#endif
 
 // Homing axis search distance multiplier. Computed by this value times the cycle travel.
 #ifndef HOMING_AXIS_SEARCH_SCALAR
@@ -47,6 +49,10 @@ void limits_init()
 	} else {
 		limits_disable(); 
 	}
+
+#ifdef TEST_NUCLEO_EXTI_PINS
+    test_initialization();
+#endif
 	
 #else
   LIMIT_DDR &= ~(LIMIT_MASK); // Set as input pins
@@ -77,6 +83,7 @@ void limits_init()
 void limits_disable()
 {
 #ifdef NUCLEO
+//TODO: complete this part
 #else
   LIMIT_PCMSK &= ~LIMIT_MASK;  // Disable specific pins of the Pin Change Interrupt
   PCICR &= ~(1 << LIMIT_INT);  // Disable Pin Change Interrupt
@@ -90,6 +97,7 @@ void limits_disable()
 uint8_t limits_get_state()
 {
 #ifdef NUCLEO
+//TODO: complete this part
 #else
   uint8_t limit_state = 0;
   uint8_t pin = (LIMIT_PIN & LIMIT_MASK);
@@ -119,11 +127,17 @@ uint8_t limits_get_state()
 // homing cycles and will not respond correctly. Upon user request or need, there may be a
 // special pinout for an e-stop, but it is generally recommended to just directly connect
 // your e-stop switch to the Arduino reset pin, since it is the most correct way to do this.
-#ifdef NUCLEO
-#else
 #ifndef ENABLE_SOFTWARE_DEBOUNCE
+#ifdef NUCLEO
+void exti9_5_isr()
+#else
   ISR(LIMIT_INT_vect) // DEFAULT: Limit pin change interrupt process. 
+#endif
   {
+#ifdef TEST_NUCLEO_EXTI_PINS
+    test_interrupt_signalling((uint32_t)5);
+#endif-
+
     // Ignore limit switches if already in an alarm state or in-process of executing an alarm.
     // When in the alarm state, Grbl should have been reset or will force a reset, so any pending 
     // moves in the planner and serial buffers are all cleared and newly sent blocks will be 
@@ -134,16 +148,19 @@ uint8_t limits_get_state()
         #ifdef HARD_LIMIT_FORCE_STATE_CHECK
           // Check limit pin state. 
           if (limits_get_state()) {
-            mc_reset(); // Initiate system kill.
+          //TODO: uncomment mc_reset call when redefined.
+            //mc_reset(); // Initiate system kill.
             bit_true_atomic(sys_rt_exec_alarm, (EXEC_ALARM_HARD_LIMIT|EXEC_CRITICAL_EVENT)); // Indicate hard limit critical event
           }
         #else
-          mc_reset(); // Initiate system kill.
+//TODO: uncomment mc_reset call when redefined.
+          //mc_reset(); // Initiate system kill.
           bit_true_atomic(sys_rt_exec_alarm, (EXEC_ALARM_HARD_LIMIT|EXEC_CRITICAL_EVENT)); // Indicate hard limit critical event
         #endif
       }
     }
   }  
+//TODO: adjust software debounce isr routine for nucleo 
 #else // OPTIONAL: Software debounce limit pin routine.
   // Upon limit pin change, enable watchdog timer to create a short delay. 
   ISR(LIMIT_INT_vect) { if (!(WDTCSR & (1<<WDIE))) { WDTCSR |= (1<<WDIE); } }
@@ -160,7 +177,6 @@ uint8_t limits_get_state()
       }  
     }
   }
-#endif
 #endif
 
  
