@@ -1386,7 +1386,6 @@ int main(void)
 	report_init_message();
 
 	stepper_init();  // Configure stepper pins and interrupt timers
-	system_init();   // Configure pinout pins and pin-change interrupt
 
 	st_reset();
 
@@ -1398,6 +1397,10 @@ int main(void)
 	sys.soft_limit = false;
 
 	sys.state = STATE_CYCLE;
+
+
+	system_init();   // Configure pinout pins and pin-change interrupt
+	limits_init();
 
 	uint32_t counter = 0;
 	uint16_t temp_dir_bits;

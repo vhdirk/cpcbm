@@ -38,6 +38,8 @@ void limits_init()
 #ifdef NUCLEO
     rcc_periph_clock_enable(RCC_GPIOB);
     rcc_periph_clock_enable(RCC_GPIOC);
+    rcc_periph_clock_enable(RCC_SYSCFG);
+
 	SET_LIMITS_DDR;  // Set as input pins
 	#ifdef DISABLE_LIMIT_PIN_PULL_UP
     UNSET_LIMITS_PU; // Normal low operation. Requires external pull-down.
@@ -46,7 +48,15 @@ void limits_init()
     #endif
 
     if (bit_istrue(settings.flags,BITFLAG_HARD_LIMIT_ENABLE)) {
-		exti_enable_request(LIMIT_INT_vect);
+    	/*reset pending exti events */
+    	exti_reset_request(LIMIT_INT_vect);
+    	/*reset pending exti interrupts */
+    	nvic_clear_pending_irq(LIMIT_INT);
+    	//exti_select_source(EXTI0, GPIOC);
+    	exti_select_source(EXTI6, GPIOB);
+    	exti_select_source(EXTI7, GPIOC);
+    	exti_select_source(EXTI8, GPIOC);
+    	exti_enable_request(LIMIT_INT_vect);
 		exti_set_trigger(LIMIT_INT_vect, EXTI_TRIGGER_FALLING);
 		nvic_enable_irq(LIMIT_INT);// Enable Limits pins Interrupt
 	} else {
@@ -133,10 +143,14 @@ uint8_t limits_get_state()
 #ifndef ENABLE_SOFTWARE_DEBOUNCE
 #ifdef NUCLEO
 void exti9_5_isr()
+{
+
+	exti_reset_request(LIMIT_INT_vect);
+	nvic_clear_pending_irq(NVIC_EXTI9_5_IRQ);
 #else
-  ISR(LIMIT_INT_vect) // DEFAULT: Limit pin change interrupt process. 
+  ISR(LIMIT_INT_vect) // DEFAULT: Limit pin change interrupt process. {
 #endif
-  {
+
 #ifdef TEST_NUCLEO_EXTI_PINS
     test_interrupt_signalling((uint32_t)5);
 #endif

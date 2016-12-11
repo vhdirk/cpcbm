@@ -97,7 +97,7 @@
 #define LIMIT_Y_PU                GPIOB_PUPDR
 #define Y_LIMIT_BIT               6 // NucleoF401 Digital PB6
 #define LIMIT_Y_PU_MASK           (0x1<<(Y_LIMIT_BIT*2)) // X-Z limit pull-up mask
-#define LIMIT_Y_PU_RESET_MASK    ((0x3<<(Y_LIMIT_BIT*2))) // Y limit dir mask
+#define LIMIT_Y_PU_RESET_MASK     ((0x3<<(Y_LIMIT_BIT*2))) // Y limit dir mask
 #define LIMIT_Y_MASK              (1<<Y_LIMIT_BIT) // Y limit bits
 /* Interrupt defines for LIMIT PINS */
 #define LIMIT_INT                 NVIC_EXTI9_5_IRQ  // Pin change interrupt enable pin

@@ -24,11 +24,15 @@ void test_interrupt_signalling(uint32_t num_signals)
     uint32_t i;
     for(j = 0; j < num_signals; j++)
     {
-        gpio_set(GPIOA, GPIO5);	/* LED on/off */
-	for (i = 0; i < 1000000; i++)
-	{	/* Wait a bit. */
-		__asm__("nop");
-	}
-	gpio_clear(GPIOA, GPIO5);	/* LED on/off */
-}
+    	gpio_set(GPIOA, GPIO5);	/* LED on/off */
+    	for (i = 0; i < 1000000; i++)
+    	{	/* Wait a bit. */
+    		__asm__("nop");
+    	}
+    	gpio_clear(GPIOA, GPIO5);	/* LED on/off */
+    	for (i = 0; i < 1000000; i++)
+    	{	/* Wait a bit. */
+    		__asm__("nop");
+    	}
+    }
 }
