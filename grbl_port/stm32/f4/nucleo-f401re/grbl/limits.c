@@ -20,6 +20,7 @@
 */
   
 #include "grbl.h"
+
 #ifdef TEST_NUCLEO_EXTI_PINS
 #include "test_nucleo.h"
 #endif
@@ -35,6 +36,8 @@
 void limits_init() 
 {
 #ifdef NUCLEO
+    rcc_periph_clock_enable(RCC_GPIOB);
+    rcc_periph_clock_enable(RCC_GPIOC);
 	SET_LIMITS_DDR;  // Set as input pins
 	#ifdef DISABLE_LIMIT_PIN_PULL_UP
     UNSET_LIMITS_PU; // Normal low operation. Requires external pull-down.
@@ -136,7 +139,7 @@ void exti9_5_isr()
   {
 #ifdef TEST_NUCLEO_EXTI_PINS
     test_interrupt_signalling((uint32_t)5);
-#endif-
+#endif
 
     // Ignore limit switches if already in an alarm state or in-process of executing an alarm.
     // When in the alarm state, Grbl should have been reset or will force a reset, so any pending 

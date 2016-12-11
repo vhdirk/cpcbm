@@ -1094,8 +1094,8 @@ void fill_fake_prep_buffer(uint16_t fake_direction_bits,
 	//uint32_t fake_steps_Z_AXIS = 0;
 	//uint32_t fake_step_event_count = 0;
 	
-	float fake_max_entry_speed_sqr = 100;
-	float fake_max_junction_speed_sqr = 225;
+	//float fake_max_entry_speed_sqr = 100;
+	//float fake_max_junction_speed_sqr = 225;
 	float fake_nominal_speed_sqr = 225;     
 	
 	float fake_millimeters = 67.5;

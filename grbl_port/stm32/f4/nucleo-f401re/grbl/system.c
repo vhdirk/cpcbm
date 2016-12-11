@@ -30,6 +30,10 @@ volatile uint8_t sys_rt_exec_alarm;  // Global realtime executor bitflag variabl
 void system_init()
 {
 #ifdef NUCLEO
+	/* Enable GPIOA and GPIOB clocks. */
+	rcc_periph_clock_enable(RCC_GPIOA);
+    rcc_periph_clock_enable(RCC_GPIOB);
+    rcc_periph_clock_enable(RCC_GPIOC);
 	SET_CONTROLS_DDR; // Configure as input pins
 #ifdef DISABLE_CONTROL_PIN_PULL_UP
 	UNSET_CONTROLS_PU;
@@ -38,7 +42,7 @@ void system_init()
 #endif
 	exti_enable_request(CONTROL_INT_vect);
 	exti_set_trigger(CONTROL_INT_vect, EXTI_TRIGGER_FALLING);
-	nvic_enable_irq(RESET_CONTROL_INT);// Enable control pin Interrupt
+	//nvic_enable_irq(RESET_CONTROL_INT);// Enable control pin Interrupt
 	nvic_enable_irq(FEED_HOLD_CONTROL_INT);// Enable control pin Interrupt
 	nvic_enable_irq(CYCLE_START_CONTROL_INT);// Enable control pin Interrupt
 	nvic_enable_irq(SAFETY_DOOR_CONTROL_INT);// Enable control pin Interrupt
@@ -61,27 +65,42 @@ void system_init()
 #ifdef NUCLEO
 void exti0_isr()
 {
-
+#ifdef TEST_NUCLEO_EXTI_PINS
+    test_interrupt_signalling((uint32_t)10);
+#endif
 }
 
 void exti1_isr()
 {
+	nvic_clear_pending_irq(NVIC_EXTI1_IRQ);
+#ifdef TEST_NUCLEO_EXTI_PINS
+    test_interrupt_signalling((uint32_t)1);
+#endif
     bit_true(sys_rt_exec_state, EXEC_FEED_HOLD);
 }
 
 void exti2_isr()
 {
+#ifdef TEST_NUCLEO_EXTI_PINS
+    test_interrupt_signalling((uint32_t)2);
+#endif
 	//TODO: uncomment this when function is imported
 	//mc_reset();
 }
 
 void exti3_isr()
 {
+#ifdef TEST_NUCLEO_EXTI_PINS
+    test_interrupt_signalling((uint32_t)3);
+#endif
     bit_true(sys_rt_exec_state, EXEC_SAFETY_DOOR);
 }
 
 void exti4_isr()
 {
+#ifdef TEST_NUCLEO_EXTI_PINS
+    test_interrupt_signalling((uint32_t)4);
+#endif
 	bit_true(sys_rt_exec_state, EXEC_CYCLE_START);
 }
 #else
