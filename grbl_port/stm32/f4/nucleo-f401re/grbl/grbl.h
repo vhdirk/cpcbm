@@ -51,7 +51,11 @@
 #include "defaults.h"
 #include "cpu_map.h"
 // #include "coolant_control.h"
-// #include "eeprom.h"
+#ifdef NUCLEO
+#include "flash.h"
+#else
+#include "eeprom.h"
+#endif
 // #include "gcode.h"
 #include "limits.h"
 // #include "motion_control.h"

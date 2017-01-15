@@ -21,6 +21,8 @@
 /* This cpu_map file serves as a central pin mapping settings file for AVR Mega 2560 */
 
 #include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/rcc.h>
+#include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/exti.h>
 
 #ifdef GRBL_PLATFORM

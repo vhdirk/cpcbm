@@ -40,7 +40,8 @@
 // may exist from user-supplied templates or directly user-defined in cpu_map.h
 //#define CPU_MAP_ATMEGA328P // Arduino Uno CPU
 #define NUCLEO
-#define TEST_NUCLEO_EXTI_PINS
+// As default this should be disabled.
+//#define TEST_NUCLEO_EXTI_PINS
 
 // Define realtime command special characters. These characters are 'picked-off' directly from the
 // serial read data stream and are not passed to the grbl line execution parser. Select characters

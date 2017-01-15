@@ -1,5 +1,6 @@
 
 #include <libopencm3/stm32/flash.h>
+#include <flash.h>
 
 
 flash_unlock();
@@ -22,6 +23,28 @@ unsigned char flash_get_char( unsigned int addr )
 	return value; // Return the byte read from EEPROM.
 }
 
+
+unsigned int flash_verify_erase_need(char * destination, char *source, unsigned int size)
+{
+	char new_value; // New EFLASH value.
+	char old_value; // Old EFLASH value.
+	char diff_mask; // Difference mask, i.e. old value XOR new value.
+
+	for(unsigned int i = 0; i < size; i++)
+	{
+		new_value = *(source+i); // new EFLASH value.
+		old_value = *(destination+i); // Get old EFLASH value.
+		diff_mask = old_value ^ new_value; // Get bit differences.
+
+		// Check if any bits are changed to '1' in the new value.
+		if( diff_mask & new_value )
+		{
+			return ((unsigned int)1);
+		}
+	}
+	return ((unsigned int)0);
+
+}
 
 /*! \brief  Write byte to FLASH.
  *
