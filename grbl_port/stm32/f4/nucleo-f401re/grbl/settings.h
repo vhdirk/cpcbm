@@ -53,6 +53,15 @@
 #define SETTINGS_RESTORE_STARTUP_LINES bit(2)
 #define SETTINGS_RESTORE_BUILD_INFO bit(3)
 
+#ifdef NUCLEO
+#define EFLASH_ADDR_GLOBAL_OFFSET         1U
+#define EFLASH_ADDR_PARAMETERS_OFFSET     512U
+#define EFLASH_ADDR_STARTUP_BLOCK_OFFSET  768U
+#define EFLASH_ADDR_BUILD_INFO_OFFSET     942U
+#define EFLASH_ERASE_AND_RESTORE_OFFSET   1024U
+#define EFLASH_MAIN_BASE_ADDRESS          0x08040000U
+#define EFLASH_COPY_BASE_ADDRESS          0x08060000U
+#else
 // Define EEPROM memory address location values for Grbl settings and parameters
 // NOTE: The Atmega328p has 1KB EEPROM. The upper half is reserved for parameters and
 // the startup script. The lower half contains the global settings and space for future 
@@ -61,6 +70,7 @@
 #define EEPROM_ADDR_PARAMETERS     512U
 #define EEPROM_ADDR_STARTUP_BLOCK  768U
 #define EEPROM_ADDR_BUILD_INFO     942U
+#endif
 
 // Define EEPROM address indexing for coordinate parameters
 #define N_COORDINATE_SYSTEM 6  // Number of supported work coordinate systems (from index 1)

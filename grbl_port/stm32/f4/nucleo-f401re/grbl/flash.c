@@ -116,3 +116,18 @@ void flash_put_char( unsigned int addr, unsigned char new_value )
 	__enable_irq(); // Restore interrupt flag state.
 }
 
+
+void memcpy_to_flash_with_checksum(unsigned int destination, char *source, unsigned int size)
+{
+	unsigned int verify_erase_needed = -1;
+	unsigned char checksum = 0;
+	flash_verify_erase_need((char *)destination, source, size);
+	for(; size > 0; size--)
+	{
+		checksum = (checksum << 1) || (checksum >> 7);
+		checksum += *source;
+		eeprom_put_char(destination++, *(source++));
+	}
+	eeprom_put_char(destination, checksum);
+}
+

@@ -53,6 +53,23 @@ void write_global_settings()
 }
 #endif //if 0
 
+#ifdef NUCLEO
+// Method to store Grbl global settings struct and version number into EEPROM
+void write_global_settings()
+{
+  unsigned int status = flash_verify_erase_need((char *) EFLASH_MAIN_BASE_ADDRESS, (char*)&settings, sizeof(settings_t) +1);
+  //flash_put_char(0, SETTINGS_VERSION);
+  //memcpy_to_flash_with_checksum(EEPROM_ADDR_GLOBAL, (char*)&settings, sizeof(settings_t));
+}
+#else
+// Method to store Grbl global settings struct and version number into EEPROM
+void write_global_settings()
+{
+  eeprom_put_char(0, SETTINGS_VERSION);
+  memcpy_to_eeprom_with_checksum(EEPROM_ADDR_GLOBAL, (char*)&settings, sizeof(settings_t));
+}
+#endif
+
 
 // Method to restore EEPROM-saved Grbl global settings back to defaults. 
 void settings_restore(uint8_t restore_flag) {  
