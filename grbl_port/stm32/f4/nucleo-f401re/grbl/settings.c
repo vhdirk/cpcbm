@@ -23,6 +23,8 @@
 
 settings_t settings;
 
+void write_global_settings(void);
+
 #if 0
 // Method to store startup lines into EEPROM
 void settings_store_startup_line(uint8_t n, char *line)
@@ -44,22 +46,38 @@ void settings_write_coord_data(uint8_t coord_select, float *coord_data)
   memcpy_to_eeprom_with_checksum(addr,(char*)coord_data, sizeof(float)*N_AXIS);
 }  
 
-
-// Method to store Grbl global settings struct and version number into EEPROM
-void write_global_settings() 
-{
-  eeprom_put_char(0, SETTINGS_VERSION);
-  memcpy_to_eeprom_with_checksum(EEPROM_ADDR_GLOBAL, (char*)&settings, sizeof(settings_t));
-}
 #endif //if 0
 
 #ifdef NUCLEO
 // Method to store Grbl global settings struct and version number into EEPROM
 void write_global_settings()
 {
-  unsigned int status = flash_verify_erase_need((char *) EFLASH_MAIN_BASE_ADDRESS, (char*)&settings, sizeof(settings_t) +1);
-  //flash_put_char(0, SETTINGS_VERSION);
-  //memcpy_to_flash_with_checksum(EEPROM_ADDR_GLOBAL, (char*)&settings, sizeof(settings_t));
+  unsigned int status = flash_verify_erase_need((char *) EFLASH_MAIN_BASE_ADDRESS, (char*)&settings, ((unsigned int)sizeof(settings_t) +1));
+
+  if (status == 0)
+  {
+	  //write directly into main-sector
+	  flash_put_char(EFLASH_MAIN_BASE_ADDRESS, SETTINGS_VERSION);
+	  memcpy_to_flash_with_checksum(EFLASH_ADDR_GLOBAL_MAIN, (char*)&settings, sizeof(settings_t));
+  }
+  else
+  {
+	  //write into copy-sector the global settings
+	  flash_put_char(EFLASH_COPY_BASE_ADDRESS, SETTINGS_VERSION);
+	  memcpy_to_flash_with_checksum(EFLASH_ADDR_GLOBAL_COPY, (char*)&settings, sizeof(settings_t));
+
+	  //update status
+
+	  //copy into copy-sector the rest of the main sector relevant parts
+	  //update status
+
+	  //delete main-sector and update status is done implicitly
+
+	  //copy from copy-sector to main-sector to restore it
+	  //update status
+
+
+  }
 }
 #else
 // Method to store Grbl global settings struct and version number into EEPROM
@@ -108,7 +126,7 @@ void settings_restore(uint8_t restore_flag) {
 	settings.max_travel[Y_AXIS] = (-DEFAULT_Y_MAX_TRAVEL);
 	settings.max_travel[Z_AXIS] = (-DEFAULT_Z_MAX_TRAVEL);    
 
-#if 0
+#if 1
 	write_global_settings();
 #endif //if 0
   }
