@@ -85,3 +85,8 @@ void memcpy_to_flash_with_checksum(unsigned int destination, char *source, unsig
 	flash_put_char(destination, checksum);
 }
 
+
+void update_main_sector_status(uint32_t updated_status)
+{
+	flash_program_word(((uint32_t)EFLASH_MAIN_SECTOR_STATUS), updated_status);
+}

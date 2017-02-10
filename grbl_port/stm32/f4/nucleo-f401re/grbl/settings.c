@@ -66,10 +66,9 @@ void write_global_settings()
 	  flash_put_char(EFLASH_COPY_BASE_ADDRESS, SETTINGS_VERSION);
 	  memcpy_to_flash_with_checksum(EFLASH_ADDR_GLOBAL_COPY, (char*)&settings, sizeof(settings_t));
 
-	  //update status
-
 	  //copy into copy-sector the rest of the main sector relevant parts
-	  //update status
+	  //update status since main sector has been copied
+  	  void update_main_sector_status(MAIN_SECTOR_COPIED);
 
 	  //delete main-sector and update status is done implicitly
 
