@@ -90,3 +90,39 @@ void update_main_sector_status(uint32_t updated_status)
 {
 	flash_program_word(((uint32_t)EFLASH_MAIN_SECTOR_STATUS), updated_status);
 }
+
+void delete_main_sector(void)
+{
+	flash_erase_sector(((uint8_t)MAIN_SECTOR), ((uint32_t)0));
+}
+
+void delete_copy_sector(void)
+{
+	flash_erase_sector(((uint8_t)COPY_SECTOR), ((uint32_t)0));
+}
+
+void copy_main_from_copy(uint32_t start_address_offset, uint32_t end_address_offset)
+{
+	uint32_t * address = (uint32_t*)(start_address_offset + EFLASH_MAIN_BASE_ADDRESS);
+	uint32_t value;
+
+	for(uint32_t i = 0; (start_address_offset+i) < end_address_offset; i++)
+	{
+		value = *(address+i); // new EFLASH value.
+		flash_program_word((start_address_offset+i+EFLASH_COPY_BASE_ADDRESS), value);
+	}
+}
+
+void restore_main_sector()
+{
+	uint32_t * address = ((uint32_t*)EFLASH_ADDR_GLOBAL_COPY);
+	uint32_t value;
+
+	for(uint32_t i = 0; (EFLASH_ADDR_GLOBAL_COPY+i) < EFLASH_ERASE_AND_RESTORE_OFFSET; i++)
+	{
+		value = *(address+i); // new EFLASH value.
+		flash_program_word((EFLASH_ADDR_GLOBAL_COPY+i+EFLASH_MAIN_BASE_ADDRESS), value);
+	}
+}
+
+

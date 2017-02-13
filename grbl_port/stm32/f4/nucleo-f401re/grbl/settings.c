@@ -67,14 +67,20 @@ void write_global_settings()
 	  memcpy_to_flash_with_checksum(EFLASH_ADDR_GLOBAL_COPY, (char*)&settings, sizeof(settings_t));
 
 	  //copy into copy-sector the rest of the main sector relevant parts
+	  copy_main_from_copy(((uint32_t)EFLASH_ADDR_PARAMETERS_OFFSET), ((uint32_t)EFLASH_ERASE_AND_RESTORE_OFFSET));
 	  //update status since main sector has been copied
-  	  void update_main_sector_status(MAIN_SECTOR_COPIED);
+  	  update_main_sector_status(MAIN_SECTOR_COPIED);
 
 	  //delete main-sector and update status is done implicitly
+  	  delete_main_sector();
 
-	  //copy from copy-sector to main-sector to restore it
-	  //update status
+	  //copy from copy-sector to main-sector to restore it and update status
+  	  restore_main_sector();
+  	  update_main_sector_status(MAIN_SECTOR_RESTORED);
 
+  	  //delete copy sector and update status
+  	  delete_copy_sector();
+  	  update_main_sector_status(COPY_SECTOR_CLEARED);
 
   }
 }
@@ -125,9 +131,7 @@ void settings_restore(uint8_t restore_flag) {
 	settings.max_travel[Y_AXIS] = (-DEFAULT_Y_MAX_TRAVEL);
 	settings.max_travel[Z_AXIS] = (-DEFAULT_Z_MAX_TRAVEL);    
 
-#if 1
 	write_global_settings();
-#endif //if 0
   }
 
 #if 0  
