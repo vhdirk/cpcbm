@@ -66,9 +66,11 @@ unsigned int flash_verify_erase_need(char * destination, char *source, unsigned 
 void flash_put_char( unsigned int addr, unsigned char new_value)
 {
 	__disable_irq(); // Ensure atomic operation for the write operation.
+	flash_unlock();
 
 	flash_program_byte((uint32_t) addr, (uint8_t)new_value);
 	
+	flash_lock();
 	__enable_irq(); // Restore interrupt flag state.
 }
 
@@ -88,17 +90,23 @@ void memcpy_to_flash_with_checksum(unsigned int destination, char *source, unsig
 
 void update_main_sector_status(uint32_t updated_status)
 {
+	flash_unlock();
 	flash_program_word(((uint32_t)EFLASH_MAIN_SECTOR_STATUS), updated_status);
+	flash_lock();
 }
 
 void delete_main_sector(void)
 {
+	flash_unlock();
 	flash_erase_sector(((uint8_t)MAIN_SECTOR), ((uint32_t)0));
+	flash_lock();
 }
 
 void delete_copy_sector(void)
 {
+	flash_unlock();
 	flash_erase_sector(((uint8_t)COPY_SECTOR), ((uint32_t)0));
+	flash_lock();
 }
 
 void copy_main_from_copy(uint32_t start_address_offset, uint32_t end_address_offset)
@@ -106,11 +114,15 @@ void copy_main_from_copy(uint32_t start_address_offset, uint32_t end_address_off
 	uint32_t * address = (uint32_t*)(start_address_offset + EFLASH_MAIN_BASE_ADDRESS);
 	uint32_t value;
 
+	flash_unlock();
+
 	for(uint32_t i = 0; (start_address_offset+i) < end_address_offset; i++)
 	{
 		value = *(address+i); // new EFLASH value.
 		flash_program_word((start_address_offset+i+EFLASH_COPY_BASE_ADDRESS), value);
 	}
+
+	flash_lock();
 }
 
 void restore_main_sector()
@@ -118,11 +130,13 @@ void restore_main_sector()
 	uint32_t * address = ((uint32_t*)EFLASH_ADDR_GLOBAL_COPY);
 	uint32_t value;
 
-	for(uint32_t i = 0; (EFLASH_ADDR_GLOBAL_COPY+i) < EFLASH_ERASE_AND_RESTORE_OFFSET; i++)
+	flash_unlock();
+	for(uint32_t i = 0; (EFLASH_ADDR_GLOBAL_COPY+i) < EFLASH_MAIN_SECTOR_STATUS; i++)
 	{
 		value = *(address+i); // new EFLASH value.
 		flash_program_word((EFLASH_ADDR_GLOBAL_COPY+i+EFLASH_MAIN_BASE_ADDRESS), value);
 	}
+	flash_lock();
 }
 
 
