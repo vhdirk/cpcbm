@@ -128,13 +128,14 @@ void copy_main_from_copy(uint32_t start_address_offset, uint32_t end_address_off
 void restore_main_sector()
 {
 	uint32_t * address = ((uint32_t*)EFLASH_COPY_BASE_ADDRESS);
+	uint32_t * destination = ((uint32_t*)EFLASH_MAIN_BASE_ADDRESS);
 	uint32_t value;
 
 	flash_unlock();
-	for(uint32_t i = 0; (EFLASH_MAIN_BASE_ADDRESS+i) < EFLASH_MAIN_SECTOR_STATUS; i++)
+	for(uint32_t i = 0; (destination+i) < EFLASH_MAIN_SECTOR_STATUS; i++)
 	{
 		value = *(address+i); // new EFLASH value.
-		flash_program_word((i+EFLASH_MAIN_BASE_ADDRESS), value);
+		flash_program_word((i+destination), value);
 	}
 	flash_lock();
 }
