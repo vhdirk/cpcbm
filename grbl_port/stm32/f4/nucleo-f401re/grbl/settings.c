@@ -25,7 +25,121 @@ settings_t settings;
 
 void write_global_settings(void);
 
+#ifdef NUCLEO
+// Method to store Grbl global settings struct and version number into EEPROM
+void write_global_settings()
+{
+  uint32_t status = flash_verify_erase_need((char *) EFLASH_MAIN_BASE_ADDRESS, (char*)&settings, ((unsigned int)sizeof(settings_t) +1));
+
+  if (status == 0)
+  {
+     //write directly into main-sector
+     flash_put_char(EFLASH_MAIN_BASE_ADDRESS, SETTINGS_VERSION);
+     memcpy_to_flash_with_checksum(EFLASH_ADDR_GLOBAL_MAIN, (char*)&settings, sizeof(settings_t));
+  }
+  else
+  {
+     //clean copy sector with a delete
+     delete_copy_sector();
+     //write into copy-sector the global settings
+     flash_put_char(EFLASH_COPY_BASE_ADDRESS, SETTINGS_VERSION);
+     memcpy_to_flash_with_checksum(EFLASH_ADDR_GLOBAL_COPY, (char*)&settings, sizeof(settings_t));
+
+     //copy into copy-sector the rest of the main sector relevant parts
+     copy_from_main_to_copy(((uint32_t)EFLASH_ADDR_PARAMETERS_OFFSET), ((uint32_t)EFLASH_ERASE_AND_RESTORE_OFFSET));
+     //update status since main sector has been copied
+     update_main_sector_status(MAIN_SECTOR_COPIED);
+
+     restore_default_sector_status();
 #if 0
+     //delete main-sector and update status is done implicitly
+     delete_main_sector();
+
+     //copy from copy-sector to main-sector to restore it and update status
+     restore_main_sector();
+     update_main_sector_status(MAIN_SECTOR_RESTORED);
+
+     //delete copy sector and update status
+     delete_copy_sector();
+     update_main_sector_status(COPY_SECTOR_CLEARED);
+#endif //substituted by restore_default_sector_status function
+  }
+}
+
+
+// Method to store coord data parameters into EEPROM
+void settings_write_coord_data(uint8_t coord_select, float *coord_data)
+{
+  uint32_t addr = coord_select*(sizeof(float)*N_AXIS+1) + EFLASH_ADDR_PARAMETERS_MAIN;
+  uint32_t addr_copy = coord_select*(sizeof(float)*N_AXIS+1) + EFLASH_ADDR_PARAMETERS_COPY;
+  uint32_t status = flash_verify_erase_need((char *) addr, (char*)coord_data, ((unsigned int)sizeof(float)*N_AXIS + 1));
+
+  if (status == 0)
+  {
+	  memcpy_to_flash_with_checksum(addr,(char*)coord_data, sizeof(float)*N_AXIS);
+  }
+  else
+  {
+	  //clean copy sector with a delete
+	  delete_copy_sector();
+	  //write into copy-sector the global settings
+	  memcpy_to_flash_with_checksum(addr_copy, (char*)coord_data, sizeof(float)*N_AXIS);
+
+	  //copy into copy-sector the rest of the main sector relevant parts
+	  copy_from_main_to_copy(((uint32_t)0), coord_select*(sizeof(float)*N_AXIS));
+	  copy_from_main_to_copy(((uint32_t)coord_select*sizeof(float)*(N_AXIS + 1)+1), ((uint32_t)EFLASH_ERASE_AND_RESTORE_OFFSET));
+
+	  //update status since main sector has been copied
+      update_main_sector_status(MAIN_SECTOR_COPIED);
+
+	  restore_default_sector_status();
+  }
+}
+
+// Method to store startup lines into EEPROM
+void settings_store_startup_line(uint8_t n, char *line)
+{
+  uint32_t addr = n*(LINE_BUFFER_SIZE+1)+EFLASH_ADDR_STARTUP_BLOCK_MAIN;
+  uint32_t addr_copy = n*(LINE_BUFFER_SIZE+1) + EFLASH_ADDR_STARTUP_BLOCK_COPY;
+  uint32_t status = flash_verify_erase_need((char *) addr, (char*)line, ((unsigned int)LINE_BUFFER_SIZE + 1));
+
+  if (status == 0)
+  {
+	  memcpy_to_flash_with_checksum(addr,(char*)line, LINE_BUFFER_SIZE);
+  }
+  else
+  {
+	  //clean copy sector with a delete
+	  delete_copy_sector();
+	  //write into copy-sector the global settings
+	  memcpy_to_flash_with_checksum(addr_copy, (char*)line, LINE_BUFFER_SIZE);
+
+	  //copy into copy-sector the rest of the main sector relevant parts
+	  copy_from_main_to_copy(((uint32_t)0), n*(LINE_BUFFER_SIZE+1));
+	  copy_from_main_to_copy(((uint32_t)n*(LINE_BUFFER_SIZE+1)+LINE_BUFFER_SIZE), ((uint32_t)EFLASH_ERASE_AND_RESTORE_OFFSET));
+
+	  //update status since main sector has been copied
+      update_main_sector_status(MAIN_SECTOR_COPIED);
+
+	  restore_default_sector_status();
+  }
+}
+
+#else
+// Method to store Grbl global settings struct and version number into EEPROM
+void write_global_settings()
+{
+  eeprom_put_char(0, SETTINGS_VERSION);
+  memcpy_to_eeprom_with_checksum(EEPROM_ADDR_GLOBAL, (char*)&settings, sizeof(settings_t));
+}
+
+// Method to store coord data parameters into EEPROM
+void settings_write_coord_data(uint8_t coord_select, float *coord_data)
+{
+  uint32_t addr = coord_select*(sizeof(float)*N_AXIS+1) + EEPROM_ADDR_PARAMETERS;
+  memcpy_to_eeprom_with_checksum(addr,(char*)coord_data, sizeof(float)*N_AXIS);
+}
+
 // Method to store startup lines into EEPROM
 void settings_store_startup_line(uint8_t n, char *line)
 {
@@ -39,116 +153,66 @@ void settings_store_build_info(char *line)
   memcpy_to_eeprom_with_checksum(EEPROM_ADDR_BUILD_INFO,(char*)line, LINE_BUFFER_SIZE);
 }
 
-// Method to store coord data parameters into EEPROM
-void settings_write_coord_data(uint8_t coord_select, float *coord_data)
-{  
-  uint32_t addr = coord_select*(sizeof(float)*N_AXIS+1) + EEPROM_ADDR_PARAMETERS;
-  memcpy_to_eeprom_with_checksum(addr,(char*)coord_data, sizeof(float)*N_AXIS);
-}  
-
-#endif //if 0
-
-#ifdef NUCLEO
-// Method to store Grbl global settings struct and version number into EEPROM
-void write_global_settings()
-{
-  unsigned int status = flash_verify_erase_need((char *) EFLASH_MAIN_BASE_ADDRESS, (char*)&settings, ((unsigned int)sizeof(settings_t) +1));
-
-  if (status == 0)
-  {
-	  //write directly into main-sector
-	  flash_put_char(EFLASH_MAIN_BASE_ADDRESS, SETTINGS_VERSION);
-	  memcpy_to_flash_with_checksum(EFLASH_ADDR_GLOBAL_MAIN, (char*)&settings, sizeof(settings_t));
-  }
-  else
-  {
-	  //write into copy-sector the global settings
-	  flash_put_char(EFLASH_COPY_BASE_ADDRESS, SETTINGS_VERSION);
-	  memcpy_to_flash_with_checksum(EFLASH_ADDR_GLOBAL_COPY, (char*)&settings, sizeof(settings_t));
-
-	  //copy into copy-sector the rest of the main sector relevant parts
-	  copy_main_from_copy(((uint32_t)EFLASH_ADDR_PARAMETERS_OFFSET), ((uint32_t)EFLASH_ERASE_AND_RESTORE_OFFSET));
-	  //update status since main sector has been copied
-  	  update_main_sector_status(MAIN_SECTOR_COPIED);
-
-	  //delete main-sector and update status is done implicitly
-  	  delete_main_sector();
-
-	  //copy from copy-sector to main-sector to restore it and update status
-  	  restore_main_sector();
-  	  update_main_sector_status(MAIN_SECTOR_RESTORED);
-
-  	  //delete copy sector and update status
-  	  delete_copy_sector();
-  	  update_main_sector_status(COPY_SECTOR_CLEARED);
-
-  }
-}
-#else
-// Method to store Grbl global settings struct and version number into EEPROM
-void write_global_settings()
-{
-  eeprom_put_char(0, SETTINGS_VERSION);
-  memcpy_to_eeprom_with_checksum(EEPROM_ADDR_GLOBAL, (char*)&settings, sizeof(settings_t));
-}
 #endif
 
 
 // Method to restore EEPROM-saved Grbl global settings back to defaults. 
 void settings_restore(uint8_t restore_flag) {  
   if (restore_flag & SETTINGS_RESTORE_DEFAULTS) {
-	settings.pulse_microseconds = DEFAULT_STEP_PULSE_MICROSECONDS;
-	settings.stepper_idle_lock_time = DEFAULT_STEPPER_IDLE_LOCK_TIME;
-	settings.step_invert_mask = DEFAULT_STEPPING_INVERT_MASK;
-	settings.dir_invert_mask = DEFAULT_DIRECTION_INVERT_MASK;
-	settings.status_report_mask = DEFAULT_STATUS_REPORT_MASK;
-	settings.junction_deviation = DEFAULT_JUNCTION_DEVIATION;
-	settings.arc_tolerance = DEFAULT_ARC_TOLERANCE;
-	settings.homing_dir_mask = DEFAULT_HOMING_DIR_MASK;
-	settings.homing_feed_rate = DEFAULT_HOMING_FEED_RATE;
-	settings.homing_seek_rate = DEFAULT_HOMING_SEEK_RATE;
-	settings.homing_debounce_delay = DEFAULT_HOMING_DEBOUNCE_DELAY;
-	settings.homing_pulloff = DEFAULT_HOMING_PULLOFF;
+    settings.pulse_microseconds = DEFAULT_STEP_PULSE_MICROSECONDS;
+    settings.stepper_idle_lock_time = DEFAULT_STEPPER_IDLE_LOCK_TIME;
+    settings.step_invert_mask = DEFAULT_STEPPING_INVERT_MASK;
+    settings.dir_invert_mask = DEFAULT_DIRECTION_INVERT_MASK;
+    settings.status_report_mask = DEFAULT_STATUS_REPORT_MASK;
+    settings.junction_deviation = DEFAULT_JUNCTION_DEVIATION;
+    settings.arc_tolerance = DEFAULT_ARC_TOLERANCE;
+    settings.homing_dir_mask = DEFAULT_HOMING_DIR_MASK;
+    settings.homing_feed_rate = DEFAULT_HOMING_FEED_RATE;
+    settings.homing_seek_rate = DEFAULT_HOMING_SEEK_RATE;
+    settings.homing_debounce_delay = DEFAULT_HOMING_DEBOUNCE_DELAY;
+    settings.homing_pulloff = DEFAULT_HOMING_PULLOFF;
 
-	settings.flags = 0;
-	if (DEFAULT_REPORT_INCHES) { settings.flags |= BITFLAG_REPORT_INCHES; }
-	if (DEFAULT_INVERT_ST_ENABLE) { settings.flags |= BITFLAG_INVERT_ST_ENABLE; }
-	if (DEFAULT_INVERT_LIMIT_PINS) { settings.flags |= BITFLAG_INVERT_LIMIT_PINS; }
-	if (DEFAULT_SOFT_LIMIT_ENABLE) { settings.flags |= BITFLAG_SOFT_LIMIT_ENABLE; }
-	if (DEFAULT_HARD_LIMIT_ENABLE) { settings.flags |= BITFLAG_HARD_LIMIT_ENABLE; }
-	if (DEFAULT_HOMING_ENABLE) { settings.flags |= BITFLAG_HOMING_ENABLE; }
+    settings.flags = 0;
+    if (DEFAULT_REPORT_INCHES) { settings.flags |= BITFLAG_REPORT_INCHES; }
+    if (DEFAULT_INVERT_ST_ENABLE) { settings.flags |= BITFLAG_INVERT_ST_ENABLE; }
+    if (DEFAULT_INVERT_LIMIT_PINS) { settings.flags |= BITFLAG_INVERT_LIMIT_PINS; }
+    if (DEFAULT_SOFT_LIMIT_ENABLE) { settings.flags |= BITFLAG_SOFT_LIMIT_ENABLE; }
+    if (DEFAULT_HARD_LIMIT_ENABLE) { settings.flags |= BITFLAG_HARD_LIMIT_ENABLE; }
+    if (DEFAULT_HOMING_ENABLE) { settings.flags |= BITFLAG_HOMING_ENABLE; }
   
-	settings.steps_per_mm[X_AXIS] = DEFAULT_X_STEPS_PER_MM;
-	settings.steps_per_mm[Y_AXIS] = DEFAULT_Y_STEPS_PER_MM;
-	settings.steps_per_mm[Z_AXIS] = DEFAULT_Z_STEPS_PER_MM;
-	settings.max_rate[X_AXIS] = DEFAULT_X_MAX_RATE;
-	settings.max_rate[Y_AXIS] = DEFAULT_Y_MAX_RATE;
-	settings.max_rate[Z_AXIS] = DEFAULT_Z_MAX_RATE;
-	settings.acceleration[X_AXIS] = DEFAULT_X_ACCELERATION;
-	settings.acceleration[Y_AXIS] = DEFAULT_Y_ACCELERATION;
-	settings.acceleration[Z_AXIS] = DEFAULT_Z_ACCELERATION;
-	settings.max_travel[X_AXIS] = (-DEFAULT_X_MAX_TRAVEL);
-	settings.max_travel[Y_AXIS] = (-DEFAULT_Y_MAX_TRAVEL);
-	settings.max_travel[Z_AXIS] = (-DEFAULT_Z_MAX_TRAVEL);    
+    settings.steps_per_mm[X_AXIS] = DEFAULT_X_STEPS_PER_MM;
+    settings.steps_per_mm[Y_AXIS] = DEFAULT_Y_STEPS_PER_MM;
+    settings.steps_per_mm[Z_AXIS] = DEFAULT_Z_STEPS_PER_MM;
+    settings.max_rate[X_AXIS] = DEFAULT_X_MAX_RATE;
+    settings.max_rate[Y_AXIS] = DEFAULT_Y_MAX_RATE;
+    settings.max_rate[Z_AXIS] = DEFAULT_Z_MAX_RATE;
+    settings.acceleration[X_AXIS] = DEFAULT_X_ACCELERATION;
+    settings.acceleration[Y_AXIS] = DEFAULT_Y_ACCELERATION;
+    settings.acceleration[Z_AXIS] = DEFAULT_Z_ACCELERATION;
+    settings.max_travel[X_AXIS] = (-DEFAULT_X_MAX_TRAVEL);
+    settings.max_travel[Y_AXIS] = (-DEFAULT_Y_MAX_TRAVEL);
+    settings.max_travel[Z_AXIS] = (-DEFAULT_Z_MAX_TRAVEL);    
 
-	write_global_settings();
+    write_global_settings();
   }
 
 #if 0  
   if (restore_flag & SETTINGS_RESTORE_PARAMETERS) {
-	uint8_t idx;
-	float coord_data[N_AXIS];
-	memset(&coord_data, 0, sizeof(coord_data));
-	for (idx=0; idx <= SETTING_INDEX_NCOORD; idx++) { settings_write_coord_data(idx, coord_data); }
+    uint8_t idx;
+    float coord_data[N_AXIS];
+#ifndef NUCLEO
+    memset(&coord_data, 0, sizeof(coord_data));
+#endif
+    for (idx=0; idx <= SETTING_INDEX_NCOORD; idx++) { settings_write_coord_data(idx, coord_data); }
   }
   
   if (restore_flag & SETTINGS_RESTORE_STARTUP_LINES) {
-	#if N_STARTUP_LINE > 0
-	eeprom_put_char(EEPROM_ADDR_STARTUP_BLOCK, 0);
-	#endif
-	#if N_STARTUP_LINE > 1
-	eeprom_put_char(EEPROM_ADDR_STARTUP_BLOCK+(LINE_BUFFER_SIZE+1), 0);
-	#endif
+    #if N_STARTUP_LINE > 0
+    eeprom_put_char(EEPROM_ADDR_STARTUP_BLOCK, 0);
+    #endif
+    #if N_STARTUP_LINE > 1
+    eeprom_put_char(EEPROM_ADDR_STARTUP_BLOCK+(LINE_BUFFER_SIZE+1), 0);
+    #endif
   }
   
   if (restore_flag & SETTINGS_RESTORE_BUILD_INFO) { eeprom_put_char(EEPROM_ADDR_BUILD_INFO , 0); }
@@ -329,7 +393,7 @@ void settings_init(void) {
   // uint8_t i;
   // for (i=0; i<=SETTING_INDEX_NCOORD; i++) {
   //   if (!settings_read_coord_data(i, coord_data)) {
-  // 	report_status_message(STATUS_SETTING_READ_FAIL);
+  //     report_status_message(STATUS_SETTING_READ_FAIL);
   //   }
   // }
   // NOTE: Startup lines are checked and executed by protocol_main_loop at the end of initialization.

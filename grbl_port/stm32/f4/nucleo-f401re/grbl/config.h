@@ -353,7 +353,8 @@
 // can be too small and g-code blocks can get truncated. Officially, the g-code standards 
 // support up to 256 characters. In future versions, this default will be increased, when 
 // we know how much extra memory space we can re-invest into this.
-// #define LINE_BUFFER_SIZE 80  // Uncomment to override default in protocol.h
+#define LINE_BUFFER_SIZE 80  // Uncomment to override default in protocol.h
+//TODO: re-comment when protocol.h is included!
   
 // Serial send and receive buffer size. The receive buffer is often used as another streaming
 // buffer to store incoming blocks to be processed by Grbl when its ready. Most streaming

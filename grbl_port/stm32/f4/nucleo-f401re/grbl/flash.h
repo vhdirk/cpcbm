@@ -10,5 +10,6 @@ void memcpy_to_flash_with_checksum(unsigned int destination, char *source, unsig
 void update_main_sector_status(uint32_t updated_status);
 void delete_main_sector(void);
 void delete_copy_sector(void);
-void copy_main_from_copy(uint32_t start_address_offset, uint32_t end_address_offset);
+void copy_from_main_to_copy(uint32_t start_address_offset, uint32_t end_address_offset);
 void restore_main_sector(void);
+void restore_default_sector_status(void);
