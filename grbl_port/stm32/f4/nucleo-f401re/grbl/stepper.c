@@ -1379,7 +1379,14 @@ void fill_fake_prep_buffer(uint16_t fake_direction_bits,
 
 int main(void)
 {
-	//settings_init(); // Load Grbl settings from EEPROM
+#ifdef TEST_FLASH_GLOBAL_PARAMS
+	flash_put_char( ((unsigned int)EFLASH_ADDR_GLOBAL_MAIN), ((unsigned char)0x0));
+	flash_put_char( ((unsigned int)EFLASH_ADDR_GLOBAL_MAIN+1), ((unsigned char)0x0));
+	flash_put_char( ((unsigned int)EFLASH_ADDR_GLOBAL_MAIN+2), ((unsigned char)0x0));
+	flash_put_char( ((unsigned int)EFLASH_ADDR_GLOBAL_MAIN+3), ((unsigned char)0x0));
+#endif
+
+	settings_init(); // Load Grbl settings from memory
 	settings_restore(SETTINGS_RESTORE_ALL);
 
 	serial_init();

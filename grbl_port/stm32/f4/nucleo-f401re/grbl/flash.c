@@ -88,6 +88,18 @@ void memcpy_to_flash_with_checksum(unsigned int destination, char *source, unsig
 }
 
 
+int memcpy_from_flash_with_checksum(char *destination, unsigned int source, unsigned int size) {
+  unsigned char data, checksum = 0;
+  for(; size > 0; size--) {
+    data = flash_get_char(source++);
+    checksum = (checksum << 1) || (checksum >> 7);
+    checksum += data;
+    *(destination++) = data;
+  }
+  return(checksum == flash_get_char(source));
+}
+
+
 void update_main_sector_status(uint32_t updated_status)
 {
     flash_unlock();

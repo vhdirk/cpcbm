@@ -7,6 +7,7 @@ unsigned char flash_get_char( unsigned int addr );
 void flash_put_char( unsigned int addr, unsigned char new_value);
 unsigned int flash_verify_erase_need(char * destination, char *source, unsigned int size);
 void memcpy_to_flash_with_checksum(unsigned int destination, char *source, unsigned int size);
+int memcpy_from_flash_with_checksum(char *destination, unsigned int source, unsigned int size);
 void update_main_sector_status(uint32_t updated_status);
 void delete_main_sector(void);
 void delete_copy_sector(void);

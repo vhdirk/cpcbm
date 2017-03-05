@@ -196,7 +196,7 @@ void settings_restore(uint8_t restore_flag) {
     write_global_settings();
   }
 
-#if 0  
+
   if (restore_flag & SETTINGS_RESTORE_PARAMETERS) {
     uint8_t idx;
     float coord_data[N_AXIS];
@@ -205,21 +205,94 @@ void settings_restore(uint8_t restore_flag) {
 #endif
     for (idx=0; idx <= SETTING_INDEX_NCOORD; idx++) { settings_write_coord_data(idx, coord_data); }
   }
-  
   if (restore_flag & SETTINGS_RESTORE_STARTUP_LINES) {
-    #if N_STARTUP_LINE > 0
+#ifdef NUCLEO
+	#if N_STARTUP_LINE > 0
+    flash_put_char(EFLASH_ADDR_STARTUP_BLOCK_MAIN, 0);
+    #endif
+    #if N_STARTUP_LINE > 1
+    flash_put_char(EFLASH_ADDR_STARTUP_BLOCK_MAIN+(LINE_BUFFER_SIZE+1), 0);
+    #endif
+#else
+	#if N_STARTUP_LINE > 0
     eeprom_put_char(EEPROM_ADDR_STARTUP_BLOCK, 0);
     #endif
     #if N_STARTUP_LINE > 1
     eeprom_put_char(EEPROM_ADDR_STARTUP_BLOCK+(LINE_BUFFER_SIZE+1), 0);
     #endif
+#endif
   }
   
-  if (restore_flag & SETTINGS_RESTORE_BUILD_INFO) { eeprom_put_char(EEPROM_ADDR_BUILD_INFO , 0); }
-#endif //if 0
+  if (restore_flag & SETTINGS_RESTORE_BUILD_INFO)
+  {
+#ifdef NUCLEO
+	  flash_put_char(EFLASH_ADDR_BUILD_INFO_MAIN , 0);
+#else
+	  eeprom_put_char(EEPROM_ADDR_BUILD_INFO , 0);
+#endif
+  }
 }
 
-#if 0
+#ifdef NUCLEO
+// Reads startup line from FLASH. Updated pointed line string data.
+uint8_t settings_read_startup_line(uint8_t n, char *line)
+{
+  uint32_t addr = n*(LINE_BUFFER_SIZE+1)+EFLASH_ADDR_STARTUP_BLOCK_MAIN;
+  if (!(memcpy_from_flash_with_checksum((char*)line, addr, LINE_BUFFER_SIZE))) {
+    // Reset line with default value
+    line[0] = 0; // Empty line
+    settings_store_startup_line(n, line);
+    return(false);
+  }
+  return(true);
+}
+
+
+// Reads startup line from FLASH. Updated pointed line string data.
+uint8_t settings_read_build_info(char *line)
+{
+  if (!(memcpy_from_flash_with_checksum((char*)line, EFLASH_ADDR_BUILD_INFO_MAIN, LINE_BUFFER_SIZE))) {
+    // Reset line with default value
+    line[0] = 0; // Empty line
+    settings_store_build_info(line);
+    return(false);
+  }
+  return(true);
+}
+
+
+// Read selected coordinate data from FLASH. Updates pointed coord_data value.
+uint8_t settings_read_coord_data(uint8_t coord_select, float *coord_data)
+{
+  uint32_t addr = coord_select*(sizeof(float)*N_AXIS+1) + EFLASH_ADDR_PARAMETERS_MAIN;
+  if (!(memcpy_from_flash_with_checksum((char*)coord_data, addr, sizeof(float)*N_AXIS))) {
+    // Reset with default zero vector
+    clear_vector_float(coord_data);
+    settings_write_coord_data(coord_select,coord_data);
+    return(false);
+  }
+  return(true);
+}
+
+
+// Reads Grbl global settings struct from FLASH.
+uint8_t read_global_settings(void) {
+  // Check version-byte of flash
+  uint8_t version = flash_get_char(0);
+  if (version == SETTINGS_VERSION) {
+    // Read settings-record and check checksum
+    if (!(memcpy_from_flash_with_checksum((char*)&settings, EFLASH_ADDR_GLOBAL_MAIN, sizeof(settings_t)))) {
+      return(false);
+    }
+  } else {
+    return(false);
+  }
+  return(true);
+}
+
+
+
+#else
 // Reads startup line from EEPROM. Updated pointed line string data.
 uint8_t settings_read_startup_line(uint8_t n, char *line)
 {
@@ -274,6 +347,7 @@ uint8_t read_global_settings(void) {
   }
   return(true);
 }
+#endif //ifdef NUCLEO
 
 
 // A helper method to set settings from command line
@@ -398,7 +472,6 @@ void settings_init(void) {
   // }
   // NOTE: Startup lines are checked and executed by protocol_main_loop at the end of initialization.
 }
-#endif //if 0
 
 
 // Returns step pin mask according to Grbl internal axis indexing.
