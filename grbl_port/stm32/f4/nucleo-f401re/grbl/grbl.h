@@ -50,22 +50,22 @@
 #include "system.h"
 #include "defaults.h"
 #include "cpu_map.h"
-// #include "coolant_control.h"
+#include "coolant_control.h"
 #ifdef NUCLEO
 #include "flash.h"
 #else
 #include "eeprom.h"
 #endif
-// #include "gcode.h"
+#include "gcode.h"
 #include "limits.h"
-// #include "motion_control.h"
+#include "motion_control.h"
 #include "planner.h"
 #include "print.h"
-// #include "probe.h"
-// #include "protocol.h"
+#include "probe.h"
+#include "protocol.h"
 #include "report.h"
 #include "serial.h"
-// #include "spindle_control.h"
+#include "spindle_control.h"
 #include "stepper.h"
 
 

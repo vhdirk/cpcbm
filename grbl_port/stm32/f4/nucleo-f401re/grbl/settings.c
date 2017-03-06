@@ -24,6 +24,7 @@
 settings_t settings;
 
 void write_global_settings(void);
+uint8_t read_global_settings(void);
 
 #ifdef NUCLEO
 // Method to store Grbl global settings struct and version number into EEPROM
