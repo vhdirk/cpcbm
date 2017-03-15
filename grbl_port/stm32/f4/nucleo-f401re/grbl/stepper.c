@@ -28,9 +28,6 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
 
-//#include "cpu_map/cpu_map_nucleof401.h"
-
-#define F_CPU (16000000)
 #endif
 
 // Some useful constants.
@@ -55,8 +52,10 @@
 #define AMASS_LEVEL2 (F_CPU/4000) // Over-drives ISR (x4)
 #define AMASS_LEVEL3 (F_CPU/2000) // Over-drives ISR (x8)
 
+#ifdef TEST_NUCLEO
 // Declare system global variable structure
 system_t sys;
+#endif
 
 uint32_t debug_counter = 0;
 
@@ -177,21 +176,6 @@ void fill_fake_prep_buffer(uint16_t fake_direction_bits,
 							uint32_t fake_steps_Y_AXIS,
 							uint32_t fake_steps_Z_AXIS,
 							uint32_t fake_step_event_count);
-void delay_1_ms(void);
-
-void delay_1_ms()
-{
-	uint32_t counter = F_CPU/1000;
-	while(counter--)
-	{continue;}
-}
-// Delays variable defined milliseconds. Compiler compatibility fix for _delay_ms(),
-// which only accepts constants in future compiler releases.
-void delay_ms(uint16_t ms)
-{
-  while ( ms-- ) { delay_1_ms(); }
-}
-
 
 /*    BLOCK VELOCITY PROFILE DEFINITION 
           __________________________
@@ -1376,7 +1360,7 @@ void fill_fake_prep_buffer(uint16_t fake_direction_bits,
       }
 }
 
-
+#ifdef TEST_NUCLEO
 int main(void)
 {
 #ifdef TEST_FLASH_GLOBAL_PARAMS
@@ -1446,3 +1430,4 @@ int main(void)
    // while(1);
     return 0;
 }
+#endif

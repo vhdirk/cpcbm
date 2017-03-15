@@ -52,18 +52,6 @@ void write_global_settings()
      update_main_sector_status(MAIN_SECTOR_COPIED);
 
      restore_default_sector_status();
-#if 0
-     //delete main-sector and update status is done implicitly
-     delete_main_sector();
-
-     //copy from copy-sector to main-sector to restore it and update status
-     restore_main_sector();
-     update_main_sector_status(MAIN_SECTOR_RESTORED);
-
-     //delete copy sector and update status
-     delete_copy_sector();
-     update_main_sector_status(COPY_SECTOR_CLEARED);
-#endif //substituted by restore_default_sector_status function
   }
 }
 
@@ -118,6 +106,34 @@ void settings_store_startup_line(uint8_t n, char *line)
 	  //copy into copy-sector the rest of the main sector relevant parts
 	  copy_from_main_to_copy(((uint32_t)0), n*(LINE_BUFFER_SIZE+1));
 	  copy_from_main_to_copy(((uint32_t)n*(LINE_BUFFER_SIZE+1)+LINE_BUFFER_SIZE), ((uint32_t)EFLASH_ERASE_AND_RESTORE_OFFSET));
+
+	  //update status since main sector has been copied
+      update_main_sector_status(MAIN_SECTOR_COPIED);
+
+	  restore_default_sector_status();
+  }
+}
+
+// Method to store build info into EEPROM
+void settings_store_build_info(char *line)
+{
+  uint32_t addr = EFLASH_ADDR_BUILD_INFO_MAIN;
+  uint32_t addr_copy = EFLASH_ADDR_BUILD_INFO_COPY;
+  uint32_t status = flash_verify_erase_need((char *) addr, (char*)line, ((unsigned int)LINE_BUFFER_SIZE + 1));
+
+  if (status == 0)
+  {
+	  memcpy_to_flash_with_checksum(addr,(char*)line, LINE_BUFFER_SIZE);
+  }
+  else
+  {
+	  //clean copy sector with a delete
+	  delete_copy_sector();
+	  //write into copy-sector the global settings
+	  memcpy_to_flash_with_checksum(addr_copy, (char*)line, LINE_BUFFER_SIZE);
+
+	  //copy into copy-sector the rest of the main sector relevant parts
+	  copy_from_main_to_copy(((uint32_t)0), addr);
 
 	  //update status since main sector has been copied
       update_main_sector_status(MAIN_SECTOR_COPIED);

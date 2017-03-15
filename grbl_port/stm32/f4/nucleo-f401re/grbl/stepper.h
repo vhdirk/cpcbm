@@ -26,6 +26,8 @@
   #define SEGMENT_BUFFER_SIZE 6
 #endif
 
+void delay_1_ms(void);
+
 // Initialize and setup the stepper motor subsystem
 void stepper_init(void);
 

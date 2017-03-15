@@ -25,6 +25,8 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/exti.h>
 
+#define F_CPU (16000000)
+
 #ifdef GRBL_PLATFORM
 #error "cpu_map already defined: GRBL_PLATFORM=" GRBL_PLATFORM
 #endif

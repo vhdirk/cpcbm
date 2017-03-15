@@ -285,8 +285,6 @@ void report_probe_parameters()
   printPgmString(PSTR("]\r\n"));
 }
 
-//TODO: remove this if 0
-#if 0
 // Prints Grbl NGC parameters (coordinate offsets, probing)
 void report_ngc_parameters()
 {
@@ -513,4 +511,4 @@ void report_realtime_status()
   
   printPgmString(PSTR(">\r\n"));
 }
-#endif
+

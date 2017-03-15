@@ -17,13 +17,13 @@
 ## along with this library.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-BINARY = stepper
+BINARY = main
 
 LDSCRIPT = ../nucleo-f401re.ld
 
 CPPFLAGS += -I.  -I./cpu_map -I./defaults
 
-OBJS		+= test_nucleo.o settings.o serial.o system.o print.o report.o limits.o flash.o gcode.o motion_control.o protocol.o probe.o coolant_control.o spindle_control.o
+OBJS		+= test_nucleo.o nuts_bolts.o report.o stepper.o settings.o serial.o system.o print.o limits.o flash.o gcode.o motion_control.o protocol.o planner.o probe.o coolant_control.o spindle_control.o
 
 include ../../Makefile.include
 
