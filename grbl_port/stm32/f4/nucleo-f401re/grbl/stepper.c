@@ -52,11 +52,6 @@
 #define AMASS_LEVEL2 (F_CPU/4000) // Over-drives ISR (x4)
 #define AMASS_LEVEL3 (F_CPU/2000) // Over-drives ISR (x8)
 
-#ifdef TEST_NUCLEO
-// Declare system global variable structure
-system_t sys;
-#endif
-
 uint32_t debug_counter = 0;
 
 // Stores the planner block Bresenham algorithm execution data for the segments in the segment 

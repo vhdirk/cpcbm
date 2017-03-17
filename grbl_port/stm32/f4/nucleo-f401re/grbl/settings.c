@@ -295,7 +295,7 @@ uint8_t settings_read_coord_data(uint8_t coord_select, float *coord_data)
 // Reads Grbl global settings struct from FLASH.
 uint8_t read_global_settings(void) {
   // Check version-byte of flash
-  uint8_t version = flash_get_char(0);
+  uint8_t version = flash_get_char(EFLASH_ADDR_VERSION_MAIN);
   if (version == SETTINGS_VERSION) {
     // Read settings-record and check checksum
     if (!(memcpy_from_flash_with_checksum((char*)&settings, EFLASH_ADDR_GLOBAL_MAIN, sizeof(settings_t)))) {
