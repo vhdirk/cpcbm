@@ -147,7 +147,7 @@ void restore_main_sector()
     for(uint32_t i = 0; i < EFLASH_ERASE_AND_RESTORE_OFFSET; i++)
     {
         value = *(address+i); // new EFLASH value.
-        flash_program_word((i+destination), value);
+        flash_program_word(((i<<2)+destination), value);
     }
     flash_lock();
 }
@@ -170,7 +170,12 @@ void restore_default_sector_status()
 		delete_copy_sector();
 		update_main_sector_status(COPY_SECTOR_CLEARED);
 		break;
+	case(COPY_SECTOR_CLEARED):
+		break;
 	default:
+		//delete main and copy sector, setting restore function will do the rest
+		delete_main_sector();
+		delete_copy_sector();
 		break;
 	}
 }
