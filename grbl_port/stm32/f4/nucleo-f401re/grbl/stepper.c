@@ -165,12 +165,7 @@ typedef struct {
 } st_prep_t;
 static st_prep_t prep;
 
-/*Fill block/segment buffers for test purpose*/
-void fill_fake_prep_buffer(uint16_t fake_direction_bits,
-							uint32_t fake_steps_X_AXIS,
-							uint32_t fake_steps_Y_AXIS,
-							uint32_t fake_steps_Z_AXIS,
-							uint32_t fake_step_event_count);
+
 
 /*    BLOCK VELOCITY PROFILE DEFINITION 
           __________________________
@@ -1060,369 +1055,298 @@ void st_prep_buffer()
   }
 #endif
 
-/*Fill block/segment buffers for test purpose*/
-void fill_fake_prep_buffer(uint16_t fake_direction_bits,
-		                     uint32_t fake_steps_X_AXIS,
-							 uint32_t fake_steps_Y_AXIS,
-							 uint32_t fake_steps_Z_AXIS,
-							 uint32_t fake_step_event_count)
-{
-	//uint16_t fake_direction_bits = 0x510;//test dir bit@1 for nucleo
-	//uint32_t fake_steps_X_AXIS = 30;
-	//uint32_t fake_steps_Y_AXIS = 0;
-	//uint32_t fake_steps_Z_AXIS = 0;
-	//uint32_t fake_step_event_count = 0;
-	
-	//float fake_max_entry_speed_sqr = 100;
-	//float fake_max_junction_speed_sqr = 225;
-	float fake_nominal_speed_sqr = 225;     
-	
-	float fake_millimeters = 67.5;
-	float fake_acceleration = 0.5;
-	float fake_entry_speed_sqr = 100;
-	
-	
-	// Increment stepper common data index to store new planner block data. 
-	if ( ++prep.st_block_index == (SEGMENT_BUFFER_SIZE-1) ) { prep.st_block_index = 0; }
-	
-	//block buffer
-	st_prep_block = &st_block_buffer[prep.st_block_index];
-	st_prep_block->direction_bits = fake_direction_bits;
 
-	#ifndef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
-	st_prep_block->steps[X_AXIS] = fake_steps_X_AXIS;//pl_block->steps[X_AXIS];
-	st_prep_block->steps[Y_AXIS] = fake_steps_Y_AXIS;//pl_block->steps[Y_AXIS];
-	st_prep_block->steps[Z_AXIS] = fake_steps_Z_AXIS;//pl_block->steps[Z_AXIS];
-	st_prep_block->step_event_count = fake_step_event_count;//pl_block->step_event_count;
-	#else
-	// With AMASS enabled, simply bit-shift multiply all Bresenham data by the max AMASS 
-	// level, such that we never divide beyond the original data anywhere in the algorithm.
-	// If the original data is divided, we can lose a step from integer roundoff.
-	st_prep_block->steps[X_AXIS] = fake_steps_X_AXIS/*pl_block->steps[X_AXIS]*/ << MAX_AMASS_LEVEL;
-	st_prep_block->steps[Y_AXIS] = fake_steps_Y_AXIS/*pl_block->steps[Y_AXIS]*/ << MAX_AMASS_LEVEL;
-	st_prep_block->steps[Z_AXIS] = fake_steps_Z_AXIS/*pl_block->steps[Z_AXIS]*/ << MAX_AMASS_LEVEL;
-	st_prep_block->step_event_count = fake_step_event_count/*pl_block->step_event_count*/ << MAX_AMASS_LEVEL;
-	#endif
-	
-	//segment buffer
-    prep.flag_partial_block = true; // set flag
+  /*Fill block/segment buffers for test purpose*/
+  void fill_fake_prep_buffer(uint16_t fake_direction_bits,
+  		                     uint32_t fake_steps_X_AXIS,
+  							 uint32_t fake_steps_Y_AXIS,
+  							 uint32_t fake_steps_Z_AXIS,
+  							 uint32_t fake_step_event_count)
+  {
+  	//uint16_t fake_direction_bits = 0x510;//test dir bit@1 for nucleo
+  	//uint32_t fake_steps_X_AXIS = 30;
+  	//uint32_t fake_steps_Y_AXIS = 0;
+  	//uint32_t fake_steps_Z_AXIS = 0;
+  	//uint32_t fake_step_event_count = 0;
 
-    // Initialize segment buffer data for generating the segments.
-	prep.steps_remaining = fake_step_event_count;//pl_block->step_event_count;
-	prep.step_per_mm = prep.steps_remaining/fake_millimeters;//pl_block->millimeters;
-	prep.req_mm_increment = REQ_MM_INCREMENT_SCALAR/prep.step_per_mm;
+  	//float fake_max_entry_speed_sqr = 100;
+  	//float fake_max_junction_speed_sqr = 225;
+  	float fake_nominal_speed_sqr = 225;
 
-	prep.dt_remainder = 0.0; // Reset for new planner block
+  	float fake_millimeters = 67.5;
+  	float fake_acceleration = 0.5;
+  	float fake_entry_speed_sqr = 100;
 
-	prep.current_speed = sqrt(fake_entry_speed_sqr);//(pl_block->entry_speed_sqr);
 
-	/* ---------------------------------------------------------------------------------
-	 Compute the velocity profile of a new planner block based on its entry and exit
-	 speeds, or recompute the profile of a partially-completed planner block if the
-	 planner has updated it. For a commanded forced-deceleration, such as from a feed
-	 hold, override the planner velocities and decelerate to the target exit speed.
-	*/
-	prep.mm_complete = 0.0; // Default velocity profile complete at 0.0mm from end of block.
-	float inv_2_accel = 0.5/fake_acceleration;//pl_block->acceleration;
+  	// Increment stepper common data index to store new planner block data.
+  	if ( ++prep.st_block_index == (SEGMENT_BUFFER_SIZE-1) ) { prep.st_block_index = 0; }
 
-	// [Normal Operation]
-	// Compute or recompute velocity profile parameters of the prepped planner block.
-	prep.ramp_type = RAMP_ACCEL; // Initialize as acceleration ramp.
-	prep.accelerate_until = fake_millimeters;//pl_block->millimeters;
-	prep.exit_speed = 0;//plan_get_exec_block_exit_speed();
-	float exit_speed_sqr = prep.exit_speed*prep.exit_speed;
-	float intersect_distance =
-			0.5*(fake_millimeters/*pl_block->millimeters*/+inv_2_accel*(fake_entry_speed_sqr/*pl_block->entry_speed_sqr*/-exit_speed_sqr));
+  	//block buffer
+  	st_prep_block = &st_block_buffer[prep.st_block_index];
+  	st_prep_block->direction_bits = fake_direction_bits;
 
-	if (intersect_distance > 0.0) {
-		if (intersect_distance < fake_millimeters/*pl_block->millimeters*/) { // Either trapezoid or triangle types
-			// NOTE: For acceleration-cruise and cruise-only types, following calculation will be 0.0.
-			prep.decelerate_after = inv_2_accel*(fake_nominal_speed_sqr/*pl_block->nominal_speed_sqr*/-exit_speed_sqr);
-			if (prep.decelerate_after < intersect_distance) { // Trapezoid type
-				prep.maximum_speed = sqrt(fake_nominal_speed_sqr/*pl_block->nominal_speed_sqr*/);
-				if (fake_entry_speed_sqr/*pl_block->entry_speed_sqr*/ == fake_nominal_speed_sqr/*pl_block->nominal_speed_sqr*/) {
-					// Cruise-deceleration or cruise-only type.
-					prep.ramp_type = RAMP_CRUISE;
-				} else {
-					// Full-trapezoid or acceleration-cruise types
-					prep.accelerate_until -= inv_2_accel*(fake_nominal_speed_sqr-fake_entry_speed_sqr/*pl_block->nominal_speed_sqr-pl_block->entry_speed_sqr*/);
-				}
-			} else { // Triangle type
-				prep.accelerate_until = intersect_distance;
-				prep.decelerate_after = intersect_distance;
-				prep.maximum_speed = sqrt(2.0*fake_acceleration/*pl_block->acceleration*/*intersect_distance+exit_speed_sqr);
-			}
-			} else { // Deceleration-only type
-				prep.ramp_type = RAMP_DECEL;
-				// prep.decelerate_after = fake_millimeters;//pl_block->millimeters;
-				prep.maximum_speed = prep.current_speed;
-			}
-		} else { // Acceleration-only type
-			prep.accelerate_until = 0.0;
-			// prep.decelerate_after = 0.0;
-			prep.maximum_speed = prep.exit_speed;
-		}
+  	#ifndef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
+  	st_prep_block->steps[X_AXIS] = fake_steps_X_AXIS;//pl_block->steps[X_AXIS];
+  	st_prep_block->steps[Y_AXIS] = fake_steps_Y_AXIS;//pl_block->steps[Y_AXIS];
+  	st_prep_block->steps[Z_AXIS] = fake_steps_Z_AXIS;//pl_block->steps[Z_AXIS];
+  	st_prep_block->step_event_count = fake_step_event_count;//pl_block->step_event_count;
+  	#else
+  	// With AMASS enabled, simply bit-shift multiply all Bresenham data by the max AMASS
+  	// level, such that we never divide beyond the original data anywhere in the algorithm.
+  	// If the original data is divided, we can lose a step from integer roundoff.
+  	st_prep_block->steps[X_AXIS] = fake_steps_X_AXIS/*pl_block->steps[X_AXIS]*/ << MAX_AMASS_LEVEL;
+  	st_prep_block->steps[Y_AXIS] = fake_steps_Y_AXIS/*pl_block->steps[Y_AXIS]*/ << MAX_AMASS_LEVEL;
+  	st_prep_block->steps[Z_AXIS] = fake_steps_Z_AXIS/*pl_block->steps[Z_AXIS]*/ << MAX_AMASS_LEVEL;
+  	st_prep_block->step_event_count = fake_step_event_count/*pl_block->step_event_count*/ << MAX_AMASS_LEVEL;
+  	#endif
 
-	// Initialize new segment
-	segment_t *prep_segment = &segment_buffer[segment_buffer_head];
+  	//segment buffer
+      prep.flag_partial_block = true; // set flag
 
-	// Set new segment to point to the current segment data block.
-	prep_segment->st_block_index = prep.st_block_index;
+      // Initialize segment buffer data for generating the segments.
+  	prep.steps_remaining = fake_step_event_count;//pl_block->step_event_count;
+  	prep.step_per_mm = prep.steps_remaining/fake_millimeters;//pl_block->millimeters;
+  	prep.req_mm_increment = REQ_MM_INCREMENT_SCALAR/prep.step_per_mm;
 
-	/*------------------------------------------------------------------------------------
-		Compute the average velocity of this new segment by determining the total distance
-	  traveled over the segment time DT_SEGMENT. The following code first attempts to create
-	  a full segment based on the current ramp conditions. If the segment time is incomplete
-	  when terminating at a ramp state change, the code will continue to loop through the
-	  progressing ramp states to fill the remaining segment execution time. However, if
-	  an incomplete segment terminates at the end of the velocity profile, the segment is
-	  considered completed despite having a truncated execution time less than DT_SEGMENT.
-		The velocity profile is always assumed to progress through the ramp sequence:
-	  acceleration ramp, cruising state, and deceleration ramp. Each ramp's travel distance
-	  may range from zero to the length of the block. Velocity profiles can end either at
-	  the end of planner block (typical) or mid-block at the end of a forced deceleration,
-	  such as from a feed hold.
-	*/
-	float dt_max = DT_SEGMENT; // Maximum segment time
-	float dt = 0.0; // Initialize segment time
-	float time_var = dt_max; // Time worker variable
-	float mm_var; // mm-Distance worker variable
-	float speed_var; // Speed worker variable
-	float mm_remaining = fake_millimeters;//pl_block->millimeters; // New segment distance from end of block.
-	float minimum_mm = mm_remaining-prep.req_mm_increment; // Guarantee at least one step.
+  	prep.dt_remainder = 0.0; // Reset for new planner block
 
-    do {
-      switch (prep.ramp_type) {
-        case RAMP_ACCEL:
-          // NOTE: Acceleration ramp only computes during first do-while loop.
-          speed_var = fake_acceleration/*pl_block->acceleration*/*time_var;
-          mm_remaining -= time_var*(prep.current_speed + 0.5*speed_var);
-          if (mm_remaining < prep.accelerate_until) { // End of acceleration ramp.
-            // Acceleration-cruise, acceleration-deceleration ramp junction, or end of block.
-            mm_remaining = prep.accelerate_until; // NOTE: 0.0 at EOB
-            time_var = 2.0*(fake_millimeters/*pl_block->millimeters*/-mm_remaining)/(prep.current_speed+prep.maximum_speed);
-            if (mm_remaining == prep.decelerate_after) { prep.ramp_type = RAMP_DECEL; }
-            else { prep.ramp_type = RAMP_CRUISE; }
-            prep.current_speed = prep.maximum_speed;
-          } else { // Acceleration only.
-            prep.current_speed += speed_var;
-          }
-          break;
-        case RAMP_CRUISE:
-          // NOTE: mm_var used to retain the last mm_remaining for incomplete segment time_var calculations.
-          // NOTE: If maximum_speed*time_var value is too low, round-off can cause mm_var to not change. To
-          //   prevent this, simply enforce a minimum speed threshold in the planner.
-          mm_var = mm_remaining - prep.maximum_speed*time_var;
-          if (mm_var < prep.decelerate_after) { // End of cruise.
-            // Cruise-deceleration junction or end of block.
-            time_var = (mm_remaining - prep.decelerate_after)/prep.maximum_speed;
-            mm_remaining = prep.decelerate_after; // NOTE: 0.0 at EOB
-            prep.ramp_type = RAMP_DECEL;
-          } else { // Cruising only.
-            mm_remaining = mm_var;
-          }
-          break;
-        default: // case RAMP_DECEL:
-          // NOTE: mm_var used as a misc worker variable to prevent errors when near zero speed.
-          speed_var = fake_acceleration/*pl_block->acceleration*/*time_var; // Used as delta speed (mm/min)
-          if (prep.current_speed > speed_var) { // Check if at or below zero speed.
-            // Compute distance from end of segment to end of block.
-            mm_var = mm_remaining - time_var*(prep.current_speed - 0.5*speed_var); // (mm)
-            if (mm_var > prep.mm_complete) { // Deceleration only.
-              mm_remaining = mm_var;
-              prep.current_speed -= speed_var;
-              break; // Segment complete. Exit switch-case statement. Continue do-while loop.
+  	prep.current_speed = sqrt(fake_entry_speed_sqr);//(pl_block->entry_speed_sqr);
+
+  	/* ---------------------------------------------------------------------------------
+  	 Compute the velocity profile of a new planner block based on its entry and exit
+  	 speeds, or recompute the profile of a partially-completed planner block if the
+  	 planner has updated it. For a commanded forced-deceleration, such as from a feed
+  	 hold, override the planner velocities and decelerate to the target exit speed.
+  	*/
+  	prep.mm_complete = 0.0; // Default velocity profile complete at 0.0mm from end of block.
+  	float inv_2_accel = 0.5/fake_acceleration;//pl_block->acceleration;
+
+  	// [Normal Operation]
+  	// Compute or recompute velocity profile parameters of the prepped planner block.
+  	prep.ramp_type = RAMP_ACCEL; // Initialize as acceleration ramp.
+  	prep.accelerate_until = fake_millimeters;//pl_block->millimeters;
+  	prep.exit_speed = 0;//plan_get_exec_block_exit_speed();
+  	float exit_speed_sqr = prep.exit_speed*prep.exit_speed;
+  	float intersect_distance =
+  			0.5*(fake_millimeters/*pl_block->millimeters*/+inv_2_accel*(fake_entry_speed_sqr/*pl_block->entry_speed_sqr*/-exit_speed_sqr));
+
+  	if (intersect_distance > 0.0) {
+  		if (intersect_distance < fake_millimeters/*pl_block->millimeters*/) { // Either trapezoid or triangle types
+  			// NOTE: For acceleration-cruise and cruise-only types, following calculation will be 0.0.
+  			prep.decelerate_after = inv_2_accel*(fake_nominal_speed_sqr/*pl_block->nominal_speed_sqr*/-exit_speed_sqr);
+  			if (prep.decelerate_after < intersect_distance) { // Trapezoid type
+  				prep.maximum_speed = sqrt(fake_nominal_speed_sqr/*pl_block->nominal_speed_sqr*/);
+  				if (fake_entry_speed_sqr/*pl_block->entry_speed_sqr*/ == fake_nominal_speed_sqr/*pl_block->nominal_speed_sqr*/) {
+  					// Cruise-deceleration or cruise-only type.
+  					prep.ramp_type = RAMP_CRUISE;
+  				} else {
+  					// Full-trapezoid or acceleration-cruise types
+  					prep.accelerate_until -= inv_2_accel*(fake_nominal_speed_sqr-fake_entry_speed_sqr/*pl_block->nominal_speed_sqr-pl_block->entry_speed_sqr*/);
+  				}
+  			} else { // Triangle type
+  				prep.accelerate_until = intersect_distance;
+  				prep.decelerate_after = intersect_distance;
+  				prep.maximum_speed = sqrt(2.0*fake_acceleration/*pl_block->acceleration*/*intersect_distance+exit_speed_sqr);
+  			}
+  			} else { // Deceleration-only type
+  				prep.ramp_type = RAMP_DECEL;
+  				// prep.decelerate_after = fake_millimeters;//pl_block->millimeters;
+  				prep.maximum_speed = prep.current_speed;
+  			}
+  		} else { // Acceleration-only type
+  			prep.accelerate_until = 0.0;
+  			// prep.decelerate_after = 0.0;
+  			prep.maximum_speed = prep.exit_speed;
+  		}
+
+  	// Initialize new segment
+  	segment_t *prep_segment = &segment_buffer[segment_buffer_head];
+
+  	// Set new segment to point to the current segment data block.
+  	prep_segment->st_block_index = prep.st_block_index;
+
+  	/*------------------------------------------------------------------------------------
+  		Compute the average velocity of this new segment by determining the total distance
+  	  traveled over the segment time DT_SEGMENT. The following code first attempts to create
+  	  a full segment based on the current ramp conditions. If the segment time is incomplete
+  	  when terminating at a ramp state change, the code will continue to loop through the
+  	  progressing ramp states to fill the remaining segment execution time. However, if
+  	  an incomplete segment terminates at the end of the velocity profile, the segment is
+  	  considered completed despite having a truncated execution time less than DT_SEGMENT.
+  		The velocity profile is always assumed to progress through the ramp sequence:
+  	  acceleration ramp, cruising state, and deceleration ramp. Each ramp's travel distance
+  	  may range from zero to the length of the block. Velocity profiles can end either at
+  	  the end of planner block (typical) or mid-block at the end of a forced deceleration,
+  	  such as from a feed hold.
+  	*/
+  	float dt_max = DT_SEGMENT; // Maximum segment time
+  	float dt = 0.0; // Initialize segment time
+  	float time_var = dt_max; // Time worker variable
+  	float mm_var; // mm-Distance worker variable
+  	float speed_var; // Speed worker variable
+  	float mm_remaining = fake_millimeters;//pl_block->millimeters; // New segment distance from end of block.
+  	float minimum_mm = mm_remaining-prep.req_mm_increment; // Guarantee at least one step.
+
+      do {
+        switch (prep.ramp_type) {
+          case RAMP_ACCEL:
+            // NOTE: Acceleration ramp only computes during first do-while loop.
+            speed_var = fake_acceleration/*pl_block->acceleration*/*time_var;
+            mm_remaining -= time_var*(prep.current_speed + 0.5*speed_var);
+            if (mm_remaining < prep.accelerate_until) { // End of acceleration ramp.
+              // Acceleration-cruise, acceleration-deceleration ramp junction, or end of block.
+              mm_remaining = prep.accelerate_until; // NOTE: 0.0 at EOB
+              time_var = 2.0*(fake_millimeters/*pl_block->millimeters*/-mm_remaining)/(prep.current_speed+prep.maximum_speed);
+              if (mm_remaining == prep.decelerate_after) { prep.ramp_type = RAMP_DECEL; }
+              else { prep.ramp_type = RAMP_CRUISE; }
+              prep.current_speed = prep.maximum_speed;
+            } else { // Acceleration only.
+              prep.current_speed += speed_var;
             }
-          } // End of block or end of forced-deceleration.
-          time_var = 2.0*(mm_remaining-prep.mm_complete)/(prep.current_speed+prep.exit_speed);
-          mm_remaining = prep.mm_complete;
-      }
-      dt += time_var; // Add computed ramp time to total segment time.
-      if (dt < dt_max) { time_var = dt_max - dt; } // **Incomplete** At ramp junction.
-      else {
-        if (mm_remaining > minimum_mm) { // Check for very slow segments with zero steps.
-          // Increase segment time to ensure at least one step in segment. Override and loop
-          // through distance calculations until minimum_mm or mm_complete.
-          dt_max += DT_SEGMENT;
-          time_var = dt_max - dt;
-        } else {
-          break; // **Complete** Exit loop. Segment execution time maxed.
+            break;
+          case RAMP_CRUISE:
+            // NOTE: mm_var used to retain the last mm_remaining for incomplete segment time_var calculations.
+            // NOTE: If maximum_speed*time_var value is too low, round-off can cause mm_var to not change. To
+            //   prevent this, simply enforce a minimum speed threshold in the planner.
+            mm_var = mm_remaining - prep.maximum_speed*time_var;
+            if (mm_var < prep.decelerate_after) { // End of cruise.
+              // Cruise-deceleration junction or end of block.
+              time_var = (mm_remaining - prep.decelerate_after)/prep.maximum_speed;
+              mm_remaining = prep.decelerate_after; // NOTE: 0.0 at EOB
+              prep.ramp_type = RAMP_DECEL;
+            } else { // Cruising only.
+              mm_remaining = mm_var;
+            }
+            break;
+          default: // case RAMP_DECEL:
+            // NOTE: mm_var used as a misc worker variable to prevent errors when near zero speed.
+            speed_var = fake_acceleration/*pl_block->acceleration*/*time_var; // Used as delta speed (mm/min)
+            if (prep.current_speed > speed_var) { // Check if at or below zero speed.
+              // Compute distance from end of segment to end of block.
+              mm_var = mm_remaining - time_var*(prep.current_speed - 0.5*speed_var); // (mm)
+              if (mm_var > prep.mm_complete) { // Deceleration only.
+                mm_remaining = mm_var;
+                prep.current_speed -= speed_var;
+                break; // Segment complete. Exit switch-case statement. Continue do-while loop.
+              }
+            } // End of block or end of forced-deceleration.
+            time_var = 2.0*(mm_remaining-prep.mm_complete)/(prep.current_speed+prep.exit_speed);
+            mm_remaining = prep.mm_complete;
         }
-      }
-    } while (mm_remaining > prep.mm_complete); // **Complete** Exit loop. Profile complete.
-
-    /* -----------------------------------------------------------------------------------
-       Compute segment step rate, steps to execute, and apply necessary rate corrections.
-       NOTE: Steps are computed by direct scalar conversion of the millimeter distance
-       remaining in the block, rather than incrementally tallying the steps executed per
-       segment. This helps in removing floating point round-off issues of several additions.
-       However, since floats have only 7.2 significant digits, long moves with extremely
-       high step counts can exceed the precision of floats, which can lead to lost steps.
-       Fortunately, this scenario is highly unlikely and unrealistic in CNC machines
-       supported by Grbl (i.e. exceeding 10 meters axis travel at 200 step/mm).
-    */
-    float steps_remaining = prep.step_per_mm*mm_remaining; // Convert mm_remaining to steps
-    float n_steps_remaining = ceil(steps_remaining); // Round-up current steps remaining
-    float last_n_steps_remaining = ceil(prep.steps_remaining); // Round-up last steps remaining
-    prep_segment->n_step = last_n_steps_remaining-n_steps_remaining; // Compute number of steps to execute.
-
-    // Bail if we are at the end of a feed hold and don't have a step to execute.
-    if (prep_segment->n_step == 0) {
-      if (sys.state & (STATE_HOLD|STATE_MOTION_CANCEL|STATE_SAFETY_DOOR)) {
-        // Less than one step to decelerate to zero speed, but already very close. AMASS
-        // requires full steps to execute. So, just bail.
-        prep.current_speed = 0.0; // NOTE: (=0.0) Used to indicate completed segment calcs for hold.
-        prep.dt_remainder = 0.0;
-        prep.steps_remaining = n_steps_remaining;
-        /*pl_block->*/fake_millimeters = prep.steps_remaining/prep.step_per_mm; // Update with full steps.
-        //plan_cycle_reinitialize();
-        return; // Segment not generated, but current step data still retained.
-      }
-    }
-
-    // Compute segment step rate. Since steps are integers and mm distances traveled are not,
-    // the end of every segment can have a partial step of varying magnitudes that are not
-    // executed, because the stepper ISR requires whole steps due to the AMASS algorithm. To
-    // compensate, we track the time to execute the previous segment's partial step and simply
-    // apply it with the partial step distance to the current segment, so that it minutely
-    // adjusts the whole segment rate to keep step output exact. These rate adjustments are
-    // typically very small and do not adversely effect performance, but ensures that Grbl
-    // outputs the exact acceleration and velocity profiles as computed by the planner.
-    dt += prep.dt_remainder; // Apply previous segment partial step execute time
-    float inv_rate = dt/(last_n_steps_remaining - steps_remaining); // Compute adjusted step rate inverse
-    prep.dt_remainder = (n_steps_remaining - steps_remaining)*inv_rate; // Update segment partial step time
-
-    // Compute CPU cycles per step for the prepped segment.
-    uint32_t cycles = ceil( (TICKS_PER_MICROSECOND*1000000*60)*inv_rate ); // (cycles/step)
-
-    #ifdef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
-      // Compute step timing and multi-axis smoothing level.
-      // NOTE: AMASS overdrives the timer with each level, so only one prescalar is required.
-      if (cycles < AMASS_LEVEL1) { prep_segment->amass_level = 0; }
-      else {
-        if (cycles < AMASS_LEVEL2) { prep_segment->amass_level = 1; }
-        else if (cycles < AMASS_LEVEL3) { prep_segment->amass_level = 2; }
-        else { prep_segment->amass_level = 3; }
-        cycles >>= prep_segment->amass_level;
-        prep_segment->n_step <<= prep_segment->amass_level;
-      }
-      if (cycles < (1UL << 16)) { prep_segment->cycles_per_tick = cycles; } // < 65536 (4.1ms @ 16MHz)
-      else { prep_segment->cycles_per_tick = 0xffff; } // Just set the slowest speed possible.
-    #else
-      // Compute step timing and timer prescalar for normal step generation.
-      if (cycles < (1UL << 16)) { // < 65536  (4.1ms @ 16MHz)
-        prep_segment->prescaler = 1; // prescaler: 0
-        prep_segment->cycles_per_tick = cycles;
-      } else if (cycles < (1UL << 19)) { // < 524288 (32.8ms@16MHz)
-        prep_segment->prescaler = 2; // prescaler: 8
-        prep_segment->cycles_per_tick = cycles >> 3;
-      } else {
-        prep_segment->prescaler = 3; // prescaler: 64
-        if (cycles < (1UL << 22)) { // < 4194304 (262ms@16MHz)
-          prep_segment->cycles_per_tick =  cycles >> 6;
-        } else { // Just set the slowest speed possible. (Around 4 step/sec.)
-          prep_segment->cycles_per_tick = 0xffff;
+        dt += time_var; // Add computed ramp time to total segment time.
+        if (dt < dt_max) { time_var = dt_max - dt; } // **Incomplete** At ramp junction.
+        else {
+          if (mm_remaining > minimum_mm) { // Check for very slow segments with zero steps.
+            // Increase segment time to ensure at least one step in segment. Override and loop
+            // through distance calculations until minimum_mm or mm_complete.
+            dt_max += DT_SEGMENT;
+            time_var = dt_max - dt;
+          } else {
+            break; // **Complete** Exit loop. Segment execution time maxed.
+          }
         }
-      }
-    #endif
+      } while (mm_remaining > prep.mm_complete); // **Complete** Exit loop. Profile complete.
 
-      // Segment complete! Increment segment buffer indices.
-      segment_buffer_head = segment_next_head;
-      if ( ++segment_next_head == SEGMENT_BUFFER_SIZE ) { segment_next_head = 0; }
+      /* -----------------------------------------------------------------------------------
+         Compute segment step rate, steps to execute, and apply necessary rate corrections.
+         NOTE: Steps are computed by direct scalar conversion of the millimeter distance
+         remaining in the block, rather than incrementally tallying the steps executed per
+         segment. This helps in removing floating point round-off issues of several additions.
+         However, since floats have only 7.2 significant digits, long moves with extremely
+         high step counts can exceed the precision of floats, which can lead to lost steps.
+         Fortunately, this scenario is highly unlikely and unrealistic in CNC machines
+         supported by Grbl (i.e. exceeding 10 meters axis travel at 200 step/mm).
+      */
+      float steps_remaining = prep.step_per_mm*mm_remaining; // Convert mm_remaining to steps
+      float n_steps_remaining = ceil(steps_remaining); // Round-up current steps remaining
+      float last_n_steps_remaining = ceil(prep.steps_remaining); // Round-up last steps remaining
+      prep_segment->n_step = last_n_steps_remaining-n_steps_remaining; // Compute number of steps to execute.
 
-      // Setup initial conditions for next segment.
-      if (mm_remaining > prep.mm_complete) {
-        // Normal operation. Block incomplete. Distance remaining in block to be executed.
-        /*pl_block->*/fake_millimeters = mm_remaining;
-        prep.steps_remaining = steps_remaining;
-      } else {
-        // End of planner block or forced-termination. No more distance to be executed.
-        if (mm_remaining > 0.0) { // At end of forced-termination.
-          // Reset prep parameters for resuming and then bail. Allow the stepper ISR to complete
-          // the segment queue, where realtime protocol will set new state upon receiving the
-          // cycle stop flag from the ISR. Prep_segment is blocked until then.
+      // Bail if we are at the end of a feed hold and don't have a step to execute.
+      if (prep_segment->n_step == 0) {
+        if (sys.state & (STATE_HOLD|STATE_MOTION_CANCEL|STATE_SAFETY_DOOR)) {
+          // Less than one step to decelerate to zero speed, but already very close. AMASS
+          // requires full steps to execute. So, just bail.
           prep.current_speed = 0.0; // NOTE: (=0.0) Used to indicate completed segment calcs for hold.
           prep.dt_remainder = 0.0;
-          prep.steps_remaining = ceil(steps_remaining);
+          prep.steps_remaining = n_steps_remaining;
           /*pl_block->*/fake_millimeters = prep.steps_remaining/prep.step_per_mm; // Update with full steps.
           //plan_cycle_reinitialize();
-          return; // Bail!
-        } else { // End of planner block
-		// The planner block is complete. All steps are set to be executed in the segment buffer.
-			//pl_block = NULL; // Set pointer to indicate check and load next planner block.
-			//plan_discard_current_block();
+          return; // Segment not generated, but current step data still retained.
         }
       }
-}
 
-#ifdef TEST_NUCLEO
-int main(void)
-{
-#ifdef TEST_FLASH_GLOBAL_PARAMS
-	flash_put_char( ((unsigned int)EFLASH_ADDR_GLOBAL_MAIN), ((unsigned char)0x0));
-	flash_put_char( ((unsigned int)EFLASH_ADDR_GLOBAL_MAIN+1), ((unsigned char)0x0));
-	flash_put_char( ((unsigned int)EFLASH_ADDR_GLOBAL_MAIN+2), ((unsigned char)0x0));
-	flash_put_char( ((unsigned int)EFLASH_ADDR_GLOBAL_MAIN+3), ((unsigned char)0x0));
-#endif
+      // Compute segment step rate. Since steps are integers and mm distances traveled are not,
+      // the end of every segment can have a partial step of varying magnitudes that are not
+      // executed, because the stepper ISR requires whole steps due to the AMASS algorithm. To
+      // compensate, we track the time to execute the previous segment's partial step and simply
+      // apply it with the partial step distance to the current segment, so that it minutely
+      // adjusts the whole segment rate to keep step output exact. These rate adjustments are
+      // typically very small and do not adversely effect performance, but ensures that Grbl
+      // outputs the exact acceleration and velocity profiles as computed by the planner.
+      dt += prep.dt_remainder; // Apply previous segment partial step execute time
+      float inv_rate = dt/(last_n_steps_remaining - steps_remaining); // Compute adjusted step rate inverse
+      prep.dt_remainder = (n_steps_remaining - steps_remaining)*inv_rate; // Update segment partial step time
 
-	settings_init(); // Load Grbl settings from memory
-	settings_restore(SETTINGS_RESTORE_ALL);
+      // Compute CPU cycles per step for the prepped segment.
+      uint32_t cycles = ceil( (TICKS_PER_MICROSECOND*1000000*60)*inv_rate ); // (cycles/step)
 
-	serial_init();
-	report_init_message();
+      #ifdef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
+        // Compute step timing and multi-axis smoothing level.
+        // NOTE: AMASS overdrives the timer with each level, so only one prescalar is required.
+        if (cycles < AMASS_LEVEL1) { prep_segment->amass_level = 0; }
+        else {
+          if (cycles < AMASS_LEVEL2) { prep_segment->amass_level = 1; }
+          else if (cycles < AMASS_LEVEL3) { prep_segment->amass_level = 2; }
+          else { prep_segment->amass_level = 3; }
+          cycles >>= prep_segment->amass_level;
+          prep_segment->n_step <<= prep_segment->amass_level;
+        }
+        if (cycles < (1UL << 16)) { prep_segment->cycles_per_tick = cycles; } // < 65536 (4.1ms @ 16MHz)
+        else { prep_segment->cycles_per_tick = 0xffff; } // Just set the slowest speed possible.
+      #else
+        // Compute step timing and timer prescalar for normal step generation.
+        if (cycles < (1UL << 16)) { // < 65536  (4.1ms @ 16MHz)
+          prep_segment->prescaler = 1; // prescaler: 0
+          prep_segment->cycles_per_tick = cycles;
+        } else if (cycles < (1UL << 19)) { // < 524288 (32.8ms@16MHz)
+          prep_segment->prescaler = 2; // prescaler: 8
+          prep_segment->cycles_per_tick = cycles >> 3;
+        } else {
+          prep_segment->prescaler = 3; // prescaler: 64
+          if (cycles < (1UL << 22)) { // < 4194304 (262ms@16MHz)
+            prep_segment->cycles_per_tick =  cycles >> 6;
+          } else { // Just set the slowest speed possible. (Around 4 step/sec.)
+            prep_segment->cycles_per_tick = 0xffff;
+          }
+        }
+      #endif
 
-	stepper_init();  // Configure stepper pins and interrupt timers
+        // Segment complete! Increment segment buffer indices.
+        segment_buffer_head = segment_next_head;
+        if ( ++segment_next_head == SEGMENT_BUFFER_SIZE ) { segment_next_head = 0; }
 
-	st_reset();
-
-	// Reset system variables.
-	sys.abort = false;
-	sys_rt_exec_state = 0;
-	sys_rt_exec_alarm = 0;
-	sys.suspend = false;
-	sys.soft_limit = false;
-
-	sys.state = STATE_CYCLE;
-
-
-	system_init();   // Configure pinout pins and pin-change interrupt
-	limits_init();
-
-	uint32_t counter = 0;
-	uint16_t temp_dir_bits;
-	uint32_t steps_x;
-	uint32_t steps_y;
-	uint32_t steps_z;
-	uint32_t steps_event_count;
-	while(1){
-		temp_dir_bits = 0x510;
-		steps_x = 0;
-		steps_y = 0;
-		steps_z = 0;
-
-		switch(counter%3)
-		{
-		case 0:
-			steps_x = 100;
-			break;
-		case 1:
-			steps_y = 100;
-			break;
-		case 2:
-			steps_z = 100;
-			break;
-		default:
-			break;
-		}
-		steps_event_count = 0;//counter % 5;
-		counter++;
-
-		fill_fake_prep_buffer(temp_dir_bits,steps_x,steps_y,steps_z,steps_event_count);
-		//st_prep_buffer(); // Initialize step segment buffer before beginning cycle.
-		st_wake_up();
-	}
-
-   // while(1);
-    return 0;
-}
-#endif
+        // Setup initial conditions for next segment.
+        if (mm_remaining > prep.mm_complete) {
+          // Normal operation. Block incomplete. Distance remaining in block to be executed.
+          /*pl_block->*/fake_millimeters = mm_remaining;
+          prep.steps_remaining = steps_remaining;
+        } else {
+          // End of planner block or forced-termination. No more distance to be executed.
+          if (mm_remaining > 0.0) { // At end of forced-termination.
+            // Reset prep parameters for resuming and then bail. Allow the stepper ISR to complete
+            // the segment queue, where realtime protocol will set new state upon receiving the
+            // cycle stop flag from the ISR. Prep_segment is blocked until then.
+            prep.current_speed = 0.0; // NOTE: (=0.0) Used to indicate completed segment calcs for hold.
+            prep.dt_remainder = 0.0;
+            prep.steps_remaining = ceil(steps_remaining);
+            /*pl_block->*/fake_millimeters = prep.steps_remaining/prep.step_per_mm; // Update with full steps.
+            //plan_cycle_reinitialize();
+            return; // Bail!
+          } else { // End of planner block
+  		// The planner block is complete. All steps are set to be executed in the segment buffer.
+  			//pl_block = NULL; // Set pointer to indicate check and load next planner block.
+  			//plan_discard_current_block();
+          }
+        }
+  }

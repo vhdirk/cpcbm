@@ -54,4 +54,13 @@ void st_update_plan_block_parameters(void);
 float st_get_realtime_rate(void);
 #endif
 
+#ifdef TEST_NUCLEO
+/*Fill block/segment buffers for test purpose*/
+void fill_fake_prep_buffer(uint16_t fake_direction_bits,
+							uint32_t fake_steps_X_AXIS,
+							uint32_t fake_steps_Y_AXIS,
+							uint32_t fake_steps_Z_AXIS,
+							uint32_t fake_step_event_count);
+#endif /* TEST_NUCLEO */
+
 #endif
