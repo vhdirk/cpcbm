@@ -427,11 +427,7 @@ ISR(TIMER1_COMPA_vect)
     } else {
       // Segment buffer empty. Shutdown.
       st_go_idle();
-      #ifdef NUCLEO
-      // TOBE CORRECTED: CLI operation here!!!
-      #else
       bit_true_atomic(sys_rt_exec_state,EXEC_CYCLE_STOP); // Flag main program for cycle end
-      #endif //NUCLEO
       return; // Nothing to do but exit.
     }  
   }
