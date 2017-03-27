@@ -110,8 +110,7 @@ void exti2_isr()
 #ifdef TEST_NUCLEO_EXTI_PINS
     test_interrupt_signalling((uint32_t)2);
 #endif
-	//TODO: uncomment this when function is imported
-	//mc_reset();
+	mc_reset();
 }
 
 void exti3_isr()

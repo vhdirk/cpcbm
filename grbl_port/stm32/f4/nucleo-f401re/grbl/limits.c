@@ -170,8 +170,7 @@ void exti9_5_isr()
             bit_true_atomic(sys_rt_exec_alarm, (EXEC_ALARM_HARD_LIMIT|EXEC_CRITICAL_EVENT)); // Indicate hard limit critical event
           }
         #else
-//TODO: uncomment mc_reset call when redefined.
-          //mc_reset(); // Initiate system kill.
+          mc_reset(); // Initiate system kill.
           bit_true_atomic(sys_rt_exec_alarm, (EXEC_ALARM_HARD_LIMIT|EXEC_CRITICAL_EVENT)); // Indicate hard limit critical event
         #endif
       }
@@ -293,8 +292,7 @@ void limits_go_home(uint8_t cycle_mask)
         if ( (sys_rt_exec_state & (EXEC_SAFETY_DOOR | EXEC_RESET)) ||  // Safety door or reset issued
            (!approach && (limits_get_state() & cycle_mask)) ||  // Limit switch still engaged after pull-off motion
            ( approach && (sys_rt_exec_state & EXEC_CYCLE_STOP)) ) { // Limit switch not found during approach.
-        	//TODO: uncomment mc_reset call when redefined.
-        //mc_reset(); // Stop motors, if they are running.
+          mc_reset(); // Stop motors, if they are running.
           protocol_execute_realtime();
           return;
         } else {
@@ -407,8 +405,7 @@ void limits_soft_check(float *target)
         } while ( sys.state != STATE_IDLE );
       }
     
-      //TODO: uncomment mc_reset call when redefined.
-      //mc_reset(); // Issue system reset and ensure spindle and coolant are shutdown.
+      mc_reset(); // Issue system reset and ensure spindle and coolant are shutdown.
       bit_true_atomic(sys_rt_exec_alarm, (EXEC_ALARM_SOFT_LIMIT|EXEC_CRITICAL_EVENT)); // Indicate soft limit critical event
       protocol_execute_realtime(); // Execute to enter critical event loop and system abort
       return;

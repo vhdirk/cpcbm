@@ -179,7 +179,7 @@ void usart2_isr(void)
 		case CMD_CYCLE_START:   bit_true_atomic(sys_rt_exec_state, EXEC_CYCLE_START); break; // Set as true
 		case CMD_FEED_HOLD:     bit_true_atomic(sys_rt_exec_state, EXEC_FEED_HOLD); break; // Set as true
 		case CMD_SAFETY_DOOR:   bit_true_atomic(sys_rt_exec_state, EXEC_SAFETY_DOOR); break; // Set as true
-		case CMD_RESET:         /*mc_reset();*/ break; // Call motion control reset routine. //TODO: decomment reset!
+		case CMD_RESET:         mc_reset(); break; // Call motion control reset routine.
 		default: // Write character to buffer    
 		  next_head = serial_rx_buffer_head + 1;
 		  if (next_head == RX_BUFFER_SIZE) { next_head = 0; }
