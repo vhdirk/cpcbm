@@ -96,7 +96,7 @@ void limits_init()
 void limits_disable()
 {
 #ifdef NUCLEO
-//TODO: complete this part
+	nvic_disable_irq(LIMIT_INT);// Disable Limits pins Interrupt
 #else
   LIMIT_PCMSK &= ~LIMIT_MASK;  // Disable specific pins of the Pin Change Interrupt
   PCICR &= ~(1 << LIMIT_INT);  // Disable Pin Change Interrupt
@@ -165,8 +165,7 @@ void exti9_5_isr()
         #ifdef HARD_LIMIT_FORCE_STATE_CHECK
           // Check limit pin state. 
           if (limits_get_state()) {
-          //TODO: uncomment mc_reset call when redefined.
-            //mc_reset(); // Initiate system kill.
+            mc_reset(); // Initiate system kill.
             bit_true_atomic(sys_rt_exec_alarm, (EXEC_ALARM_HARD_LIMIT|EXEC_CRITICAL_EVENT)); // Indicate hard limit critical event
           }
         #else
