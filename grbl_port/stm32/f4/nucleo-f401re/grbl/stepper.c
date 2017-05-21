@@ -259,9 +259,6 @@ void st_go_idle(void)
   #endif
   busy = false;
   
-  #ifdef NUCLEO
-  //TO BE DONE
-//  #else
   // Set stepper driver idle state, disabled or enabled, depending on settings and circumstances.
   bool pin_state = false; // Keep enabled.
   
@@ -274,7 +271,6 @@ void st_go_idle(void)
   if (bit_istrue(settings.flags,BITFLAG_INVERT_ST_ENABLE)) { pin_state = !pin_state; } // Apply pin invert.
   if (pin_state) { STEPPERS_DISABLE_PORT |= (1<<STEPPERS_DISABLE_BIT); }
   else { STEPPERS_DISABLE_PORT &= ~(1<<STEPPERS_DISABLE_BIT); }
-  #endif //NUCLEO
 }
 
 /* "The Stepper Driver Interrupt" - This timer interrupt is the workhorse of Grbl. Grbl employs
@@ -415,7 +411,7 @@ ISR(TIMER1_COMPA_vect)
         // Initialize Bresenham line and distance counters
         st.counter_x = st.counter_y = st.counter_z = (st.exec_block->step_event_count >> 1);
       }
-      st.dir_outbits = st.exec_block->direction_bits ^ dir_port_invert_mask; 
+      st.dir_outbits = st.exec_block->direction_bits ^ dir_port_invert_mask;
 
       #ifdef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
         // With AMASS enabled, adjust Bresenham axis increment counters according to AMASS level.
@@ -530,7 +526,7 @@ void tim2_isr(void)
     {
         /* clear flag */
         timer_clear_flag(TIM2, TIM_SR_CC1IF);
-		SET_STEPS(stepbits);// Begin step pulse.
+		SET_STEPS(st.step_bits);// Begin step pulse.
     }
     #endif //STEP_PULSE_DELAY
 }
@@ -612,20 +608,6 @@ void stepper_init()
     SET_STEP_DDR;
 	STEPPERS_DISABLE_DDR |= STEPPERS_DISABLE_MASK_DDR; //this is slightly different, but should be retro-compatible
     SET_DIRECTION_DDR;
-    /* These 3 instructions should be equivalent to the followings commented out at the moment*/
-    /* Step pulse axis X-Y-Z */
-    /* Set GPIO10 in GPIO port A and GPIO3/5 in GPIO port B to 'output push-pull'. */
-    // gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO10);
-    // gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO3);
-    // gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO5);
-    /* Stepper enable/disable */
-    /* Set GPIO9 (in GPIO port A) to 'output push-pull'. */
-    // gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO9);
-    /* Direction axis X-Y-Z*/
-    /* Set GPIO4/10 in GPIO port B and GPIO8 in GPIO port A to 'output push-pull'. */
-    // gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO4);
-    // gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO10);
-    // gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO8);
     
     /* Timer 1 is used as stepper driver interrupt */
     /* Interrupt by output compare mode shall be used */

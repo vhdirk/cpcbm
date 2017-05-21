@@ -563,7 +563,7 @@ void tim2_isr(void)
     {
         /* clear flag */
         timer_clear_flag(TIM2, TIM_SR_CC1IF);
-		SET_STEPS(stepbits);// Begin step pulse.
+		SET_STEPS(step_bits);// Begin step pulse.
     }
     #endif //STEP_PULSE_DELAY
 }
