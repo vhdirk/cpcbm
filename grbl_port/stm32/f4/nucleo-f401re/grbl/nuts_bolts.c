@@ -111,32 +111,95 @@ uint8_t read_float(char *line, uint8_t *char_counter, float *float_ptr)
 
 #ifdef NUCLEO
 
+#if 1 //TODO: remove it when debug is done
+
+void SysTick_Init(void) {
+	/****************************************
+	 *SystemFrequency/1000      1ms         *
+	 *SystemFrequency/100000    10us        *
+	 *SystemFrequency/1000000   1us         *
+	 *****************************************/
+	while (SysTick_Config(F_CPU / 1000000) != 0) {
+	} // One SysTick interrupt now equals 1us
+}
+
+volatile uint32_t ticks;
+void SysTick_Handler (void)
+{
+	ticks++;
+}
+
+#define MILLIS (ticks/1000)
+
+void _delay_ms (double __ms)
+{
+  uint32_t start, end;
+  start = MILLIS;
+  end = start + __ms;
+  if (start < end) {
+    while ((MILLIS >= start) && (MILLIS < end)) {continue;}
+  } else {
+    while ((MILLIS >= start) || (MILLIS < end)) {continue;};
+  }
+}
+
+void delay_ms (uint16_t ms)
+{
+  uint32_t start, end;
+  start = MILLIS;
+  end = start + ms;
+  if (start < end) {
+    while ((MILLIS >= start) && (MILLIS < end)) {continue;}
+  } else {
+    while ((MILLIS >= start) || (MILLIS < end)) {continue;};
+  }
+}
+
+
+void delay_1_ms()
+{
+	  uint32_t start, end;
+	  start = MILLIS;
+	  end = start + 1;
+	  if (start < end) {
+	    while ((MILLIS >= start) && (MILLIS < end)) {continue;}
+	  } else {
+	    while ((MILLIS >= start) || (MILLIS < end)) {continue;};
+
+}
+
+#else
+
 void _delay_ms(double __ms)
 {
-	uint32_t counter = round(F_CPU/__ms);
+	volatile uint32_t counter = round(F_CPU/1000/__ms);
 	while(counter--)
 	{continue;}
 }
 
 void delay_1_ms()
 {
-	uint32_t counter = F_CPU/1000;
+	volatile uint32_t counter = F_CPU/1000;
 	while(counter--)
 	{continue;}
 }
-//// Delays variable defined milliseconds. Compiler compatibility fix for _delay_ms(),
-//// which only accepts constants in future compiler releases.
-//void delay_ms(uint16_t ms)
-//{
-//  while ( ms-- ) { delay_1_ms(); }
-//}
+
 
 // Delays variable defined milliseconds. Compiler compatibility fix for _delay_ms(),
 // which only accepts constants in future compiler releases.
-void delay_ms(uint16_t ms) 
+void delay_ms(uint16_t ms)
+{
+  while ( ms-- ) { delay_1_ms(); }
+}
+
+ Delays variable defined milliseconds. Compiler compatibility fix for _delay_ms(),
+ which only accepts constants in future compiler releases.
+void delay_ms(uint16_t ms)
 {
   while ( ms-- ) { _delay_ms(1); }
 }
+
+
 #else
 
 // Delays variable defined microseconds. Compiler compatibility fix for _delay_us(),
