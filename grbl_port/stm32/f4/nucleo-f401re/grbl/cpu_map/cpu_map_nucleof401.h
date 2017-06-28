@@ -25,7 +25,14 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/exti.h>
 
+#define BASIC_CPU_SPEED
+#ifdef BASIC_CPU_SPEED
 #define F_CPU (16000000)
+#define PSC_MUL_FACTOR 1
+#else
+#define F_CPU (84000000)
+#define PSC_MUL_FACTOR 8
+#endif
 
 #ifdef GRBL_PLATFORM
 #error "cpu_map already defined: GRBL_PLATFORM=" GRBL_PLATFORM

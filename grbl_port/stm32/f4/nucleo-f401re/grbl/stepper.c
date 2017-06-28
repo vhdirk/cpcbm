@@ -52,8 +52,6 @@
 #define AMASS_LEVEL2 (F_CPU/4000) // Over-drives ISR (x4)
 #define AMASS_LEVEL3 (F_CPU/2000) // Over-drives ISR (x8)
 
-uint32_t debug_counter = 0;
-
 // Stores the planner block Bresenham algorithm execution data for the segments in the segment 
 // buffer. Normally, this buffer is partially in-use, but, for the worst case scenario, it will
 // never exceed the number of accessible stepper buffer segments (SEGMENT_BUFFER_SIZE-1).
@@ -502,7 +500,6 @@ ISR(TIMER1_COMPA_vect)
 //only an interrupt line is available for both overflow and output compare events, so one isr is used
 void tim2_isr(void)
 {
-	debug_counter++;
     // This interrupt is enabled by ISR_TIMER1_COMPAREA when it sets the motor port bits to execute
     // a step. This ISR resets the motor port after a short period (settings.pulse_microseconds) 
     // completing one step cycle.

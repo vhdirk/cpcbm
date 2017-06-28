@@ -108,28 +108,48 @@ uint8_t read_float(char *line, uint8_t *char_counter, float *float_ptr)
 }
 
 
+// Simple hypotenuse computation function.
+float hypot_f(float x, float y) { return(sqrt(x*x + y*y)); }
 
 #ifdef NUCLEO
 
 #if 1 //TODO: remove it when debug is done
 
-void SysTick_Init(void) {
+static inline uint32_t SysTick_Config_polling(uint32_t n_ticks)
+{
+	/* constant from systick_set_reload -- as this returns something that's
+	 * not void, this is the only possible error condition */
+	if (n_ticks & ~0x00FFFFFF) {
+		return 1;
+	}
+
+	systick_set_reload(n_ticks);
+	systick_set_clocksource(true);
+//	systick_interrupt_enable();
+	systick_counter_enable();
+
+	return 0;
+}
+
+void SysTick_Init(void)
+{
 	/****************************************
 	 *SystemFrequency/1000      1ms         *
 	 *SystemFrequency/100000    10us        *
 	 *SystemFrequency/1000000   1us         *
 	 *****************************************/
-	while (SysTick_Config(F_CPU / 1000000) != 0) {
-	} // One SysTick interrupt now equals 1us
+	//while (SysTick_Config((F_CPU / 8) / 1000) != 0)
+	while (SysTick_Config_polling((F_CPU / 8) / 1000) != 0)
+	{} // One SysTick interrupt now equals 1us
 }
 
 volatile uint32_t ticks;
-void SysTick_Handler (void)
+void sys_tick_handler()//SysTick_Handler (void)
 {
 	ticks++;
 }
 
-#define MILLIS (ticks/1000)
+#define MILLIS (ticks)
 
 void _delay_ms (double __ms)
 {
@@ -146,14 +166,44 @@ void _delay_ms (double __ms)
 void delay_ms (uint16_t ms)
 {
   uint32_t start, end;
+  uint32_t uncounted = 1;
+  uint32_t threshold = 10;
+  uint32_t value = threshold;
+
+  SysTick_Init();
+
   start = MILLIS;
   end = start + ms;
-  if (start < end) {
-    while ((MILLIS >= start) && (MILLIS < end)) {continue;}
-  } else {
-    while ((MILLIS >= start) || (MILLIS < end)) {continue;};
+  if (start < end)
+  {
+	while ((MILLIS >= start) && (MILLIS < end))
+	{
+		value = systick_get_value();
+		if((uncounted == 1) && (value < threshold))
+		{
+			ticks++;
+			uncounted = 0;
+		}
+		else if(value >= threshold)
+			uncounted = 1;
+	}
+  }
+  else
+  {
+	  while ((MILLIS >= start) || (MILLIS < end))
+	  {
+			value = systick_get_value();
+			if((uncounted == 1) && (value < threshold))
+			{
+				ticks++;
+				uncounted = 0;
+			}
+			else if(value >= threshold)
+				uncounted = 1;
+	  }
   }
 }
+
 
 
 void delay_1_ms()
@@ -164,8 +214,8 @@ void delay_1_ms()
 	  if (start < end) {
 	    while ((MILLIS >= start) && (MILLIS < end)) {continue;}
 	  } else {
-	    while ((MILLIS >= start) || (MILLIS < end)) {continue;};
-
+	    while ((MILLIS >= start) || (MILLIS < end)) {continue;}
+	  }
 }
 
 #else
@@ -180,6 +230,7 @@ void _delay_ms(double __ms)
 void delay_1_ms()
 {
 	volatile uint32_t counter = F_CPU/1000;
+	//volatile uint32_t counter = F_CPU/5000;
 	while(counter--)
 	{continue;}
 }
@@ -192,16 +243,9 @@ void delay_ms(uint16_t ms)
   while ( ms-- ) { delay_1_ms(); }
 }
 
- Delays variable defined milliseconds. Compiler compatibility fix for _delay_ms(),
- which only accepts constants in future compiler releases.
-void delay_ms(uint16_t ms)
-{
-  while ( ms-- ) { _delay_ms(1); }
-}
-
+#endif
 
 #else
-
 // Delays variable defined microseconds. Compiler compatibility fix for _delay_us(),
 // which only accepts constants in future compiler releases. Written to perform more 
 // efficiently with larger delays, as the counter adds parasitic time in each iteration.
@@ -225,5 +269,4 @@ void delay_us(uint32_t us)
 }
 #endif
 
-// Simple hypotenuse computation function.
-float hypot_f(float x, float y) { return(sqrt(x*x + y*y)); }
+

@@ -40,7 +40,8 @@
 // may exist from user-supplied templates or directly user-defined in cpu_map.h
 //#define CPU_MAP_ATMEGA328P // Arduino Uno CPU
 #define NUCLEO
-// As default this should be disabled.
+
+// As default this should be disabled. Used for test purposes.
 //#define TEST_NUCLEO_EXTI_PINS
 
 // Define realtime command special characters. These characters are 'picked-off' directly from the
@@ -343,7 +344,7 @@
 // block velocity profile is traced exactly. The size of this buffer governs how much step 
 // execution lead time there is for other Grbl processes have to compute and do their thing 
 // before having to come back and refill this buffer, currently at ~50msec of step moves.
-// #define SEGMENT_BUFFER_SIZE 6 // Uncomment to override default in stepper.h.
+//#define SEGMENT_BUFFER_SIZE 60 // Uncomment to override default in stepper.h.
 
 // Line buffer size from the serial input stream to be executed. Also, governs the size of 
 // each of the startup blocks, as they are each stored as a string of this size. Make sure
