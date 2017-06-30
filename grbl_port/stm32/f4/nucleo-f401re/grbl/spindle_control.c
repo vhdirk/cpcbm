@@ -39,14 +39,39 @@ void spindle_init()
   #ifndef USE_SPINDLE_DIR_AS_ENABLE_PIN
     SET_SPINDLE_DIRECTION_DDR; // Configure as output pin.
   #endif
-  spindle_stop();
+  
+    /* Enable TIM3 clock. */
+    rcc_periph_clock_enable(RCC_TIM3);
+    timer_reset(TIM3);
+    /* Continous mode. */
+    timer_continuous_mode(TIM3);
+    /* Timer global mode:
+     * - No divider
+     * - Alignment edge
+     * - Direction up
+     */
+    timer_set_mode(TIM3, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+    /* ARR reload enable. */
+    timer_enable_preload(TIM3);
+    // Disconnect OC1 output
+    timer_disable_oc_output(TIM3, TIM_OC1);
+    timer_disable_oc_output(TIM3, TIM_OC2);
+    timer_disable_oc_output(TIM3, TIM_OC3);
+    timer_disable_oc_output(TIM3, TIM_OC4);
+    /* Set output compare mode */
+	timer_set_oc_mode(TIM3, TIM_OC1, TIM_OCM_PWM1);
+    
+    spindle_stop();
 }
 
 void spindle_stop()
 {
   // On the Nucleo F401, spindle enable and PWM are shared. Other CPUs have seperate enable pin.
   #ifdef VARIABLE_SPINDLE
-    //TCCRA_REGISTER &= ~(1<<COMB_BIT); // Disable PWM. Output voltage is zero.
+    /* Disable PWM. Output voltage is zero. */
+    timer_disable_oc_output(TIM3, TIM_OC1);
+    /* Counter disable. */
+    timer_disable_counter(TIM3); 
     #if defined(USE_SPINDLE_DIR_AS_ENABLE_PIN)
       #ifdef INVERT_SPINDLE_ENABLE_PIN
         SET_SPINDLE_ENABLE;  // Set pin to high
@@ -64,10 +89,68 @@ void spindle_stop()
 }
 
 void spindle_set_state(uint8_t state, float rpm)
-{}
+{
+  // Halt or set spindle direction and rpm. 
+  if (state == SPINDLE_DISABLE) {
 
-void spindle_run(uint8_t state, float rpm)
-{}
+    spindle_stop();
+
+  } else {
+
+    #ifndef USE_SPINDLE_DIR_AS_ENABLE_PIN
+      if (state == SPINDLE_ENABLE_CW) {
+        UNSET_SPINDLE_DIRECTION_BIT;
+      } else {
+        SET_SPINDLE_DIRECTION_BIT;
+      }
+    #endif
+
+    #ifdef VARIABLE_SPINDLE
+        /* PWM settings done in the init, shall not need to be repeated. */
+        timer_set_prescaler(TIM3, 8);// set to 1/8 Prescaler
+        timer_set_oc_value(TIM3, TIM_OC1, 0xFFFF);// set the top 16bit value
+        timer_set_period(TIM3, 0XFFFF);
+        
+        uint16_t current_pwm;
+
+      if (rpm <= 0.0) { spindle_stop(); } // RPM should never be negative, but check anyway.
+      else {
+        #define SPINDLE_RPM_RANGE (SPINDLE_MAX_RPM-SPINDLE_MIN_RPM)
+        if ( rpm < SPINDLE_MIN_RPM ) { rpm = 0; } 
+        else { 
+          rpm -= SPINDLE_MIN_RPM; 
+          if ( rpm > SPINDLE_RPM_RANGE ) { rpm = SPINDLE_RPM_RANGE; } // Prevent integer overflow
+        }
+        current_pwm = floor( rpm*(PWM_MAX_VALUE/SPINDLE_RPM_RANGE) + 0.5);
+        #ifdef MINIMUM_SPINDLE_PWM
+          if (current_pwm < MINIMUM_SPINDLE_PWM) { current_pwm = MINIMUM_SPINDLE_PWM; }
+        #endif
+        timer_set_oc_value(TIM3, TIM_OC1, current_pwm);// Set PWM pin output
+        /* Counter enable. */
+        timer_enable_counter(TIM3); 
+    
+        // if spindle enable and PWM are shared, unless otherwise specified.
+        #if defined(USE_SPINDLE_DIR_AS_ENABLE_PIN) 
+          #ifdef INVERT_SPINDLE_ENABLE_PIN
+            UNSET_SPINDLE_ENABLE;  // Set pin to high
+          #else
+            SET_SPINDLE_ENABLE;  // Set pin to high
+          #endif
+        #endif
+      }
+      
+    #else
+      // NOTE: Without variable spindle, the enable bit should just turn on or off, regardless
+      // if the spindle speed value is zero, as its ignored anyhow.      
+      #ifdef INVERT_SPINDLE_ENABLE_PIN
+        UNSET_SPINDLE_ENABLE;  // Set pin to high
+      #else
+        SET_SPINDLE_ENABLE;  // Set pin to high
+      #endif
+    #endif
+
+  }
+}
 
 #else
 
@@ -181,6 +264,7 @@ void spindle_set_state(uint8_t state, float rpm)
   }
 }
 
+#endif //NUCLEO
 
 void spindle_run(uint8_t state, float rpm)
 {
@@ -188,4 +272,3 @@ void spindle_run(uint8_t state, float rpm)
   protocol_buffer_synchronize(); // Empty planner buffer to ensure spindle is set when programmed.  
   spindle_set_state(state, rpm);
 }
-#endif //NUCLEO
