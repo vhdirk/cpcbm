@@ -22,7 +22,6 @@
 
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
-#include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/exti.h>
 
 #define BASIC_CPU_SPEED
@@ -117,27 +116,6 @@
 #define LIMIT_INT_vect            (EXTI6 | EXTI7 | EXTI8) 
 #define LIMIT_PCMSK               NVIC_EXTI9_5_IRQ // Pin change interrupt register
 
-/* TO BE DONE: CORRECT THE FOLLOWING CONFIGURATION FOR NUCLEO PINOUT */
-
-// Define spindle enable and spindle direction output pins.
-#define SPINDLE_ENABLE_DDR      DDRH
-#define SPINDLE_ENABLE_PORT     PORTH
-#define SPINDLE_ENABLE_BIT      3 // MEGA2560 Digital Pin 6
-#define SPINDLE_DIRECTION_DDR   DDRE
-#define SPINDLE_DIRECTION_PORT  PORTE
-#define SPINDLE_DIRECTION_BIT   3 // MEGA2560 Digital Pin 5
-
-// Define flood and mist coolant enable output pins.
-// NOTE: Uno analog pins 4 and 5 are reserved for an i2c interface, and may be installed at
-// a later date if flash and memory space allows.
-#define COOLANT_FLOOD_DDR     DDRH
-#define COOLANT_FLOOD_PORT    PORTH
-#define COOLANT_FLOOD_BIT     5 // MEGA2560 Digital Pin 8
-#ifdef ENABLE_M7 // Mist coolant disabled by default. See config.h to enable/disable.
-#define COOLANT_MIST_DDR    DDRH
-#define COOLANT_MIST_PORT   PORTH
-#define COOLANT_MIST_BIT    6 // MEGA2560 Digital Pin 9
-#endif  
 
 // Define user-control CONTROLs (cycle start, reset, feed hold) input pins.
 // NOTE: All CONTROLs pins must be on the same port and not on a port with other input pins (limits).
@@ -207,6 +185,22 @@
 #define PROBE_BIT       0 // NucleoF401 Digital PC0
 #define PROBE_MASK      (1<<PROBE_BIT)
 
+
+// Define spindle enable and spindle direction output pins.
+#define SPINDLE_ENABLE_DDR               GPIOB_MODER
+#define SPINDLE_ENABLE_PORT              GPIOB_ODR
+#define SPINDLE_ENABLE_BIT               6 // NucleoF401 Digital Pin 6
+#define SPINDLE_ENABLE_MASK_DDR          (1<<(SPINDLE_ENABLE_BIT*2)) // All (step bits*2) because the direction/mode has 2 bits
+#define SPINDLE_ENABLE_DDR_RESET_MASK    (0x3<<(SPINDLE_ENABLE_BIT*2))
+#define SPINDLE_ENABLE_MASK              (1<<SPINDLE_ENABLE_BIT)     // SPINDLE_ENABLE mask bit
+
+#define SPINDLE_DIRECTION_DDR               GPIOB_MODER
+#define SPINDLE_DIRECTION_PORT              GPIOB_ODR
+#define SPINDLE_DIRECTION_BIT               5 // NucleoF401 Digital Pin 5
+#define SPINDLE_DIRECTION_MASK_DDR          (1<<(SPINDLE_DIRECTION_BIT*2)) // All (step bits*2) because the direction/mode has 2 bits
+#define SPINDLE_DIRECTION_DDR_RESET_MASK    (0x3<<(SPINDLE_DIRECTION_BIT*2))
+#define SPINDLE_DIRECTION_MASK              (1<<SPINDLE_DIRECTION_BIT)     // SPINDLE_DIRECTION_BIT mask bit
+
 // Start of PWM & Stepper Enabled Spindle
 #ifdef VARIABLE_SPINDLE
   // Advanced Configuration Below You should not need to touch these variables
@@ -222,10 +216,30 @@
   #define WAVE2_REGISTER		WGM42
   #define WAVE3_REGISTER		WGM43
   
-  #define SPINDLE_PWM_DDR		DDRH
-  #define SPINDLE_PWM_PORT    PORTH
-  #define SPINDLE_PWM_BIT		4 // MEGA2560 Digital Pin 97
+  #define SPINDLE_PWM_DDR               GPIOB_MODER
+  #define SPINDLE_PWM_PORT              GPIOB_ODR
+  #define SPINDLE_PWM_BIT               6 // NucleoF401 Digital Pin 6
+  #define SPINDLE_PWM_MASK_DDR          (1<<(SPINDLE_PWM_BIT*2)) // All (step bits*2) because the direction/mode has 2 bits
+  #define SPINDLE_PWM_DDR_RESET_MASK    (0x3<<(SPINDLE_PWM_BIT*2))
+  #define SPINDLE_PWM_MASK              (1<<SPINDLE_PWM_BIT)     // SPINDLE_PWM mask bit
 #endif // End of VARIABLE_SPINDLE
+
+
+/* TO BE DONE: CORRECT THE FOLLOWING CONFIGURATION FOR NUCLEO PINOUT ONLY FLOOD/COOLANT */
+
+// Define flood and mist coolant enable output pins.
+// NOTE: Uno analog pins 4 and 5 are reserved for an i2c interface, and may be installed at
+// a later date if flash and memory space allows.
+#define COOLANT_FLOOD_DDR     DDRH
+#define COOLANT_FLOOD_PORT    PORTH
+#define COOLANT_FLOOD_BIT     5 // MEGA2560 Digital Pin 8
+#ifdef ENABLE_M7 // Mist coolant disabled by default. See config.h to enable/disable.
+#define COOLANT_MIST_DDR    DDRH
+#define COOLANT_MIST_PORT   PORTH
+#define COOLANT_MIST_BIT    6 // MEGA2560 Digital Pin 9
+#endif  
+
+
 
 #define SET_STEP_DDR \
   do { \
@@ -319,3 +333,37 @@
     SAFETY_DOOR_CONTROL_PU  |= SAFETY_DOOR_PU_MASK; \
   } while (0)
 
+#define SET_SPINDLE_DIRECTION_DDR \
+  do { \
+    SPINDLE_DIRECTION_DDR &= ~SPINDLE_DIRECTION_DDR_RESET_MASK; \
+    SPINDLE_DIRECTION_DDR |= SPINDLE_DIRECTION_MASK_DDR; \
+  } while (0)
+      
+#define SET_SPINDLE_DIRECTION_BIT(spindle_direction_bit) \
+  do { \
+    SPINDLE_DIRECTION_PORT = (SPINDLE_DIRECTION_PORT & ~SPINDLE_DIRECTION_MASK) | (spindle_direction_bit & SPINDLE_DIRECTION_MASK); \
+  } while (0)  
+      
+#define SET_SPINDLE_PWM_DDR \
+  do { \
+    SPINDLE_PWM_DDR &= ~SPINDLE_PWM_DDR_RESET_MASK; \
+    SPINDLE_PWM_DDR |= SPINDLE_PWM_MASK_DDR; \
+  } while (0)
+      
+#define SET_SPINDLE_ENABLE_DDR \
+  do { \
+    SPINDLE_ENABLE_DDR &= ~SPINDLE_ENABLE_DDR_RESET_MASK; \
+    SPINDLE_ENABLE_DDR |= SPINDLE_ENABLE_MASK_DDR; \
+  } while (0)
+      
+/* Set spindle enable pin */
+#define  SET_SPINDLE_ENABLE \
+  do { \
+    SPINDLE_ENABLE_PORT |= SPINDLE_ENABLE_MASK;  \
+  } while (0)
+
+/* Unset spindle enable pin */
+#define  UNSET_SPINDLE_ENABLE \
+  do { \
+    SPINDLE_ENABLE_PORT &= ~SPINDLE_ENABLE_MASK;  \
+  } while (0)

@@ -23,10 +23,45 @@
 
 #ifdef NUCLEO
 void spindle_init()
-{}
+{    
+  // Configure variable spindle PWM and enable pin, if requried. On the Uno, PWM and enable are
+  // combined unless configured otherwise.
+  #ifdef VARIABLE_SPINDLE
+    SET_SPINDLE_PWM_DDR; // Configure as PWM output pin.
+    #if defined(USE_SPINDLE_DIR_AS_ENABLE_PIN)
+      SET_SPINDLE_ENABLE_DDR; // Configure as output pin.
+    #endif     
+  // Configure no variable spindle and only enable pin.
+  #else  
+    SET_SPINDLE_ENABLE_DDR; // Configure as output pin.
+  #endif
+  
+  #ifndef USE_SPINDLE_DIR_AS_ENABLE_PIN
+    SET_SPINDLE_DIRECTION_DDR; // Configure as output pin.
+  #endif
+  spindle_stop();
+}
 
 void spindle_stop()
-{}
+{
+  // On the Nucleo F401, spindle enable and PWM are shared. Other CPUs have seperate enable pin.
+  #ifdef VARIABLE_SPINDLE
+    //TCCRA_REGISTER &= ~(1<<COMB_BIT); // Disable PWM. Output voltage is zero.
+    #if defined(USE_SPINDLE_DIR_AS_ENABLE_PIN)
+      #ifdef INVERT_SPINDLE_ENABLE_PIN
+        SET_SPINDLE_ENABLE;  // Set pin to high
+      #else
+        UNSET_SPINDLE_ENABLE; // Set pin to low
+      #endif
+    #endif
+  #else
+    #ifdef INVERT_SPINDLE_ENABLE_PIN
+        SET_SPINDLE_ENABLE;  // Set pin to high
+    #else
+        UNSET_SPINDLE_ENABLE; // Set pin to low
+    #endif
+  #endif  
+}
 
 void spindle_set_state(uint8_t state, float rpm)
 {}
