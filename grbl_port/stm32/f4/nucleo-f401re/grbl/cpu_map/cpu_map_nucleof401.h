@@ -343,6 +343,11 @@
   do { \
     SPINDLE_DIRECTION_PORT = (SPINDLE_DIRECTION_PORT & ~SPINDLE_DIRECTION_MASK) | (spindle_direction_bit & SPINDLE_DIRECTION_MASK); \
   } while (0)  
+         
+#define UNSET_SPINDLE_DIRECTION_BIT(spindle_direction_bit) \
+  do { \
+    SPINDLE_DIRECTION_PORT = (SPINDLE_DIRECTION_PORT & ~(spindle_direction_bit & SPINDLE_DIRECTION_MASK)); \
+  } while (0)  
       
 #define SET_SPINDLE_PWM_DDR \
   do { \
