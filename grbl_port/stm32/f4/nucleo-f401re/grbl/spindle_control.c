@@ -22,6 +22,9 @@
 #include "grbl.h"
 
 #ifdef NUCLEO
+
+#include <libopencm3/stm32/timer.h>
+
 void spindle_init()
 {    
   // Configure variable spindle PWM and enable pin, if requried. On the Uno, PWM and enable are
