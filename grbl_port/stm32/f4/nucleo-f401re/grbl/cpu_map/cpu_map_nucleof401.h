@@ -93,28 +93,43 @@
 
 // Define homing/hard limit switch input pins and limit interrupt vectors. 
 // NOTE: All limit bit pins must be on the same port
-#define LIMIT_XZ_DDR              GPIOC_MODER
-#define LIMIT_XZ_PORT             GPIOC_ODR
-#define LIMIT_XZ_PIN              GPIOC_IDR
-#define LIMIT_XZ_PU               GPIOC_PUPDR
+#define LIMIT_X_DDR              GPIOC_MODER
+#define LIMIT_X_PORT             GPIOC_ODR
+#define LIMIT_X_PIN              GPIOC_IDR
+#define LIMIT_X_PU               GPIOC_PUPDR
 #define X_LIMIT_BIT               7 // NucleoF401 Digital PC7
-#define Z_LIMIT_BIT               8 // NucleoF401 Digital PC8
-#define LIMIT_XZ_PU_MASK          ((0x1<<(X_LIMIT_BIT*2))|(0x1<<(Z_LIMIT_BIT*2))) // X-Z limit pull-up mask
-#define LIMIT_XZ_PU_RESET_MASK   ((0x3<<(X_LIMIT_BIT*2))|(0x3<<(Z_LIMIT_BIT*2))) // X-Z limit dir mask
-#define LIMIT_XZ_MASK             ((1<<X_LIMIT_BIT)|(1<<Z_LIMIT_BIT)) // X-Z limit bits
+#define LIMIT_X_PU_MASK          (0x1<<(X_LIMIT_BIT*2)) // X limit pull-up mask
+#define LIMIT_X_PU_RESET_MASK    (0x3<<(X_LIMIT_BIT*2)) // X limit dir mask
+#define LIMIT_X_MASK             (1<<X_LIMIT_BIT) // X limit bits
 
 #define LIMIT_Y_DDR               GPIOB_MODER
 #define LIMIT_Y_PORT              GPIOB_ODR
 #define LIMIT_Y_PIN               GPIOB_IDR
 #define LIMIT_Y_PU                GPIOB_PUPDR
 #define Y_LIMIT_BIT               6 // NucleoF401 Digital PB6
-#define LIMIT_Y_PU_MASK           (0x1<<(Y_LIMIT_BIT*2)) // X-Z limit pull-up mask
+#define LIMIT_Y_PU_MASK           (0x1<<(Y_LIMIT_BIT*2)) // Y limit pull-up mask
 #define LIMIT_Y_PU_RESET_MASK     ((0x3<<(Y_LIMIT_BIT*2))) // Y limit dir mask
 #define LIMIT_Y_MASK              (1<<Y_LIMIT_BIT) // Y limit bits
+
+#define LIMIT_Z_DDR               GPIOB_MODER
+#define LIMIT_Z_PORT              GPIOB_ODR
+#define LIMIT_Z_PIN               GPIOB_IDR
+#define LIMIT_Z_PU                GPIOB_PUPDR
+#define Z_LIMIT_BIT               0 // NucleoF401 Digital PC0
+#define LIMIT_Z_PU_MASK           (0x1<<(Z_LIMIT_BIT*2)) // Z limit pull-up mask
+#define LIMIT_Z_PU_RESET_MASK     ((0x3<<(Z_LIMIT_BIT*2))) // Z limit dir mask
+#define LIMIT_Z_MASK              (1<<Z_LIMIT_BIT) // Y limit bits
+
+#define LIMIT_MASK                (LIMIT_X_MASK | LIMIT_Y_MASK | LIMIT_Z_MASK)
+#define INVERT_LIMIT_PIN_MASK     (LIMIT_MASK)
+
 /* Interrupt defines for LIMIT PINS */
 #define LIMIT_INT                 NVIC_EXTI9_5_IRQ  // Pin change interrupt enable pin
-#define LIMIT_INT_vect            (EXTI6 | EXTI7 | EXTI8) 
+#define LIMIT_INT_vect            (EXTI6 | EXTI7)
 #define LIMIT_PCMSK               NVIC_EXTI9_5_IRQ // Pin change interrupt register
+#define LIMIT_INT_Z               NVIC_EXTI0_IRQ  // Pin change interrupt enable pin
+#define LIMIT_INT_vect_Z          (EXTI0)
+#define LIMIT_PCMSK_Z             NVIC_EXTI0_IRQ // Pin change interrupt register
 
 
 // Define user-control CONTROLs (cycle start, reset, feed hold) input pins.
@@ -281,26 +296,33 @@
 /* set limits pins as inputs */
 #define SET_LIMITS_DDR \
   do { \
-    LIMIT_XZ_DDR &= ~LIMIT_XZ_PU_RESET_MASK; \
+    LIMIT_X_DDR &= ~LIMIT_X_PU_RESET_MASK; \
     LIMIT_Y_DDR  &= ~LIMIT_Y_PU_RESET_MASK; \
+    LIMIT_Z_DDR &= ~LIMIT_Z_PU_RESET_MASK; \
   } while (0)
 
 /* unset pull-up for limits pin */
 #define UNSET_LIMITS_PU \
   do { \
-    LIMIT_XZ_PU  &= ~LIMIT_XZ_PU_RESET_MASK; \
-    LIMIT_Y_PU   &= ~LIMIT_Y_PU_RESET_MASK; \
-  } while (0)
+    LIMIT_X_PU  &= ~LIMIT_X_PU_RESET_MASK; \
+    LIMIT_Y_PU  &= ~LIMIT_Y_PU_RESET_MASK; \
+    LIMIT_Z_PU  &= ~LIMIT_Z_PU_RESET_MASK; \
+    } while (0)
 
 /* set pull-up for limits pin */
 #define SET_LIMITS_PU \
   do { \
-    LIMIT_XZ_PU  &= ~LIMIT_XZ_PU_RESET_MASK; \
-    LIMIT_Y_PU   &= ~LIMIT_Y_PU_RESET_MASK; \
-    LIMIT_XZ_PU  |= LIMIT_XZ_PU_MASK; \
-    LIMIT_Y_PU   |= LIMIT_Y_PU_MASK; \
-  } while (0)
+    LIMIT_X_PU  &= ~LIMIT_X_PU_RESET_MASK; \
+    LIMIT_Y_PU  &= ~LIMIT_Y_PU_RESET_MASK; \
+    LIMIT_Z_PU  &= ~LIMIT_Z_PU_RESET_MASK; \
+    LIMIT_X_PU  |= LIMIT_X_PU_MASK; \
+    LIMIT_Y_PU  |= LIMIT_Y_PU_MASK; \
+    LIMIT_Z_PU  |= LIMIT_Z_PU_MASK; \
+    } while (0)
 
+/* set pull-up for limits pin */
+#define GET_LIMIT_PIN \
+  ((LIMIT_X_PIN & LIMIT_X_MASK) | (LIMIT_Y_PIN & LIMIT_Y_MASK) | (LIMIT_Z_PIN & LIMIT_Z_MASK))
 
 /* set control pins as inputs */
 #define SET_CONTROLS_DDR \

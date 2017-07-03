@@ -49,7 +49,6 @@ void system_init()
 	exti_reset_request(SAFETY_DOOR_CONTROL_INT_vect);
 
 	/*reset pending exti interrupts */
-	nvic_clear_pending_irq(NVIC_EXTI0_IRQ);
 	nvic_clear_pending_irq(NVIC_EXTI1_IRQ);
 	nvic_clear_pending_irq(NVIC_EXTI2_IRQ);
 	nvic_clear_pending_irq(NVIC_EXTI3_IRQ);
@@ -84,15 +83,6 @@ void system_init()
 }
 
 #ifdef NUCLEO
-void exti0_isr()
-{
-	//exti_reset_request(PROBE_INT_vect);
-	nvic_clear_pending_irq(NVIC_EXTI0_IRQ);
-#ifdef TEST_NUCLEO_EXTI_PINS
-    test_interrupt_signalling((uint32_t)10);
-#endif
-}
-
 void exti1_isr()
 {
 	exti_reset_request(FEED_HOLD_CONTROL_INT_vect);

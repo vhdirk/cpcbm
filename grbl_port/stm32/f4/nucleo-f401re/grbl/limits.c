@@ -50,15 +50,19 @@ void limits_init()
     if (bit_istrue(settings.flags,BITFLAG_HARD_LIMIT_ENABLE)) {
     	/*reset pending exti events */
     	exti_reset_request(LIMIT_INT_vect);
+    	exti_reset_request(LIMIT_INT_vect_Z);
     	/*reset pending exti interrupts */
     	nvic_clear_pending_irq(LIMIT_INT);
-    	//exti_select_source(EXTI0, GPIOC);
+    	nvic_clear_pending_irq(LIMIT_INT_Z);
+    	exti_select_source(EXTI0, GPIOB);
     	exti_select_source(EXTI6, GPIOB);
     	exti_select_source(EXTI7, GPIOC);
-    	exti_select_source(EXTI8, GPIOC);
     	exti_enable_request(LIMIT_INT_vect);
 		exti_set_trigger(LIMIT_INT_vect, EXTI_TRIGGER_FALLING);
 		nvic_enable_irq(LIMIT_INT);// Enable Limits pins Interrupt
+    	exti_enable_request(LIMIT_INT_vect_Z);
+		exti_set_trigger(LIMIT_INT_vect_Z, EXTI_TRIGGER_FALLING);
+		nvic_enable_irq(LIMIT_INT_Z);// Enable Limits pins Interrupt
 	} else {
 		limits_disable(); 
 	}
@@ -109,11 +113,12 @@ void limits_disable()
 // number in bit position, i.e. Z_AXIS is (1<<2) or bit 2, and Y_AXIS is (1<<1) or bit 1.
 uint8_t limits_get_state()
 {
-#ifdef NUCLEO
-//TODO: complete this part
-#else
   uint8_t limit_state = 0;
+#ifdef NUCLEO
+  uint8_t pin = GET_LIMIT_PIN;
+#else
   uint8_t pin = (LIMIT_PIN & LIMIT_MASK);
+#endif
   #ifdef INVERT_LIMIT_PIN_MASK
     pin ^= INVERT_LIMIT_PIN_MASK;
   #endif
@@ -125,7 +130,6 @@ uint8_t limits_get_state()
     }
   }
   return(limit_state);
-#endif
 }
 
 
@@ -142,6 +146,35 @@ uint8_t limits_get_state()
 // your e-stop switch to the Arduino reset pin, since it is the most correct way to do this.
 #ifndef ENABLE_SOFTWARE_DEBOUNCE
 #ifdef NUCLEO
+void exti0_isr()
+{
+	exti_reset_request(LIMIT_INT_vect_Z);
+	nvic_clear_pending_irq(NVIC_EXTI0_IRQ);
+#ifdef TEST_NUCLEO_EXTI_PINS
+    test_interrupt_signalling((uint32_t)10);
+#endif
+
+    // Ignore limit switches if already in an alarm state or in-process of executing an alarm.
+    // When in the alarm state, Grbl should have been reset or will force a reset, so any pending
+    // moves in the planner and serial buffers are all cleared and newly sent blocks will be
+    // locked out until a homing cycle or a kill lock command. Allows the user to disable the hard
+    // limit setting if their limits are constantly triggering after a reset and move their axes.
+    if (sys.state != STATE_ALARM) {
+      if (!(sys_rt_exec_alarm)) {
+        #ifdef HARD_LIMIT_FORCE_STATE_CHECK
+          // Check limit pin state.
+          if (limits_get_state()) {
+            mc_reset(); // Initiate system kill.
+            bit_true_atomic(sys_rt_exec_alarm, (EXEC_ALARM_HARD_LIMIT|EXEC_CRITICAL_EVENT)); // Indicate hard limit critical event
+          }
+        #else
+          mc_reset(); // Initiate system kill.
+          bit_true_atomic(sys_rt_exec_alarm, (EXEC_ALARM_HARD_LIMIT|EXEC_CRITICAL_EVENT)); // Indicate hard limit critical event
+        #endif
+      }
+    }
+}
+
 void exti9_5_isr()
 {
 	/* Clear interrupt request */
