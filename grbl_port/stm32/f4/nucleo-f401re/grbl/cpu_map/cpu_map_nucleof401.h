@@ -23,14 +23,17 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/exti.h>
+#include <libopencm3/stm32/flash.h>
 
-#define BASIC_CPU_SPEED
+//#define BASIC_CPU_SPEED
 #ifdef BASIC_CPU_SPEED
 #define F_CPU (16000000)
 #define PSC_MUL_FACTOR 1
 #else
-#define F_CPU (84000000)
-#define PSC_MUL_FACTOR 8
+//#define F_CPU (84000000)
+//#define PSC_MUL_FACTOR 8
+#define F_CPU (48000000)
+#define PSC_MUL_FACTOR 3
 #endif
 
 #ifdef GRBL_PLATFORM
@@ -39,6 +42,7 @@
 
 /* Test nucleo: uncomment this define to use test main */
 //#define TEST_NUCLEO
+//#define TEST_NUCLEO_EXTI_PINS
 
 #define GRBL_PLATFORM "NucleoF401"
 

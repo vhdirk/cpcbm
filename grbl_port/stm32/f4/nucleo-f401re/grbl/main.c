@@ -31,7 +31,24 @@ int main(void)
 {
 #ifdef NUCLEO
 #ifndef BASIC_CPU_SPEED
-  rcc_clock_setup_hse_3v3(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_84MHZ]);
+	const struct rcc_clock_scale rcc_hse_8mhz_3v3_no_prescalers =
+	{ /* 48MHz */
+		.pllm = 8,
+		.plln = 96,
+		.pllp = 2,
+		.pllq = 2,
+		.hpre = RCC_CFGR_HPRE_DIV_NONE,
+		.ppre1 = RCC_CFGR_PPRE_DIV_NONE,
+		.ppre2 = RCC_CFGR_PPRE_DIV_NONE,
+		.power_save = 1,
+		.flash_config = FLASH_ACR_ICE | FLASH_ACR_DCE |
+				FLASH_ACR_LATENCY_3WS,
+		.ahb_frequency  = 48000000,
+		.apb1_frequency = 48000000,
+		.apb2_frequency = 48000000
+	};
+//  rcc_clock_setup_hse_3v3(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_84MHZ]);
+	rcc_clock_setup_hse_3v3(&rcc_hse_8mhz_3v3_no_prescalers);
 #endif
 #endif
   // Initialize system upon power-up.

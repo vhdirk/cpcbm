@@ -48,9 +48,15 @@
 // and timer accuracy.  Do not alter these settings unless you know what you are doing.
 #define MAX_AMASS_LEVEL 3
 // AMASS_LEVEL0: Normal operation. No AMASS. No upper cutoff frequency. Starts at LEVEL1 cutoff frequency.
+#ifdef NUCLEO
+#define AMASS_LEVEL1 ((F_CPU/PSC_MUL_FACTOR)/8000) // Over-drives ISR (x2). Defined as F_CPU/(Cutoff frequency in Hz)
+#define AMASS_LEVEL2 ((F_CPU/PSC_MUL_FACTOR)/4000) // Over-drives ISR (x4)
+#define AMASS_LEVEL3 ((F_CPU/PSC_MUL_FACTOR)/2000) // Over-drives ISR (x8)
+#else
 #define AMASS_LEVEL1 (F_CPU/8000) // Over-drives ISR (x2). Defined as F_CPU/(Cutoff frequency in Hz)
 #define AMASS_LEVEL2 (F_CPU/4000) // Over-drives ISR (x4)
 #define AMASS_LEVEL3 (F_CPU/2000) // Over-drives ISR (x8)
+#endif
 
 // Stores the planner block Bresenham algorithm execution data for the segments in the segment 
 // buffer. Normally, this buffer is partially in-use, but, for the worst case scenario, it will
@@ -233,9 +239,10 @@ void st_wake_up()
     #endif
 
     #ifdef NUCLEO
-    /* Enable TIM1 Stepper Driver Interrupt. */
-    timer_enable_irq(TIM1, TIM_DIER_CC1IE); /** Capture/compare 1 interrupt enable */
-    timer_enable_counter(TIM1); /* Counter enable. */
+    /* Enable TIM4 Stepper Driver Interrupt. */
+    timer_enable_irq(TIM4, TIM_DIER_UIE); /** Capture/compare 1 interrupt enable */
+    timer_enable_counter(TIM4); /* Counter enable. */
+    //timer_generate_event(TIM4, TIM_EGR_UG);
     #else
     // Enable Stepper Driver Interrupt
     TIMSK1 |= (1<<OCIE1A);
@@ -248,9 +255,9 @@ void st_go_idle(void)
 {
   // Disable Stepper Driver Interrupt. Allow Stepper Port Reset Interrupt to finish, if active.
   #ifdef NUCLEO
-  /* Disable TIM1 Stepper Driver Interrupt. */
-  timer_disable_irq(TIM1, TIM_DIER_CC1IE); /** Capture/compare 1 interrupt enable */
-  timer_set_prescaler(TIM1, 0);// Reset clock to no prescaling, enabling is done before.
+  /* Disable TIM4 Stepper Driver Interrupt. */
+  timer_disable_irq(TIM4, TIM_DIER_UIE); /** Capture/compare 1 interrupt enable */
+  timer_set_prescaler(TIM4, (1*PSC_MUL_FACTOR));// Reset clock to no prescaling, enabling is done before.
   #else
   TIMSK1 &= ~(1<<OCIE1A); // Disable Timer1 interrupt
   TCCR1B = (TCCR1B & ~((1<<CS12) | (1<<CS11))) | (1<<CS10); // Reset clock to no prescaling.
@@ -320,11 +327,14 @@ void st_go_idle(void)
 // int8 variables and update position counters only when a segment completes. This can get complicated 
 // with probing and homing cycles that require true real-time positions.
 #ifdef NUCLEO
-void tim1_cc_isr(void)
+void tim4_isr(void)
+{
+	timer_clear_flag(TIM4, TIM_SR_UIF);
 #else
 ISR(TIMER1_COMPA_vect)
+{
 #endif
-{        
+
 // SPINDLE_ENABLE_PORT ^= 1<<SPINDLE_ENABLE_BIT; // Debug: Used to time ISR
   if (busy) { return; } // The busy-flag is used to avoid reentering this interrupt
   
@@ -346,7 +356,7 @@ ISR(TIMER1_COMPA_vect)
   // Enable step pulse reset timer so that The Stepper Port Reset Interrupt can reset the signal after
   // exactly settings.pulse_microseconds microseconds, independent of the main Timer1 prescaler.
   timer_set_period(TIM2, st.step_pulse_time); // Reload Timer2 counter
-  timer_set_prescaler(TIM2, 8); // Full speed, 1/8 prescaler
+  timer_set_prescaler(TIM2, 8*PSC_MUL_FACTOR); // Full speed, 1/8 prescaler
   timer_enable_counter(TIM2);   // START Timer2 count. 
   
   #else
@@ -384,7 +394,7 @@ ISR(TIMER1_COMPA_vect)
 
       #ifdef NUCLEO
 	  	  #ifndef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
-      timer_set_prescaler(TIM1, st.exec_segment->prescaler);
+      timer_set_prescaler(TIM4, (PSC_MUL_FACTOR * st.exec_segment->prescaler));
 		  #endif
       #else
       #ifndef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
@@ -395,7 +405,8 @@ ISR(TIMER1_COMPA_vect)
 
       // Initialize step segment timing per step and load number of steps to execute.
       #ifdef NUCLEO
-      timer_set_oc_value(TIM1, TIM_OC1, st.exec_segment->cycles_per_tick);
+        timer_set_period(TIM4, st.exec_segment->cycles_per_tick);
+      //timer_set_oc_value(TIM4, TIM_OC1, st.exec_segment->cycles_per_tick);
       #else
       OCR1A = st.exec_segment->cycles_per_tick;
       #endif
@@ -610,25 +621,30 @@ void stepper_init()
     /* Interrupt by output compare mode shall be used */
     /* Clear Timer on Compare match may be substituted 
        by Auto-Reload feature in normal upcounting mode */
-    /* Enable TIM1 clock. */
-    rcc_periph_clock_enable(RCC_TIM1);
-    timer_reset(TIM1);
+    /* Enable TIM4 clock. */
+    rcc_periph_clock_enable(RCC_TIM4);
+    timer_reset(TIM4);
     /* Continous mode. */
-    timer_continuous_mode(TIM1);
+    timer_continuous_mode(TIM4);
     /* Timer global mode:
 	 * - No divider
 	 * - Alignment edge
 	 * - Direction up
 	 */
-	timer_set_mode(TIM1, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+	timer_set_mode(TIM4, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
     /* ARR reload enable. */
-    timer_enable_preload(TIM1);
+    timer_enable_preload(TIM4);
     // Disconnect OC1 output
-    timer_disable_oc_output(TIM1, TIM_OC1);
-    timer_disable_oc_output(TIM1, TIM_OC2);
-    timer_disable_oc_output(TIM1, TIM_OC3);
-    timer_disable_oc_output(TIM1, TIM_OC4);
-    
+    timer_disable_oc_output(TIM4, TIM_OC1);
+    timer_disable_oc_output(TIM4, TIM_OC2);
+    timer_disable_oc_output(TIM4, TIM_OC3);
+    timer_disable_oc_output(TIM4, TIM_OC4);
+    timer_ic_disable(TIM4, TIM_IC1);
+    timer_ic_disable(TIM4, TIM_IC2);
+    timer_ic_disable(TIM4, TIM_IC3);
+    timer_ic_disable(TIM4, TIM_IC4);
+    timer_update_on_overflow(TIM4);
+
     /* TO BE VERIFIED: here timer 1 is not enabled, while in previous code it was likely clock gated */
     
     /* Timer 2 is used as stepper driver interrupt (previously TIM0) */
@@ -642,8 +658,8 @@ void stepper_init()
      * - Direction up
      */
     timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-    /* Enable TIM1 interrupt. */
-    nvic_enable_irq(NVIC_TIM1_CC_IRQ); /*to be verified if this may be placed here */
+    /* Enable TIM4 interrupt. */
+    nvic_enable_irq(NVIC_TIM4_IRQ); /*to be verified if this may be placed here */
     
     /* Enable TIM2 interrupt. */
     nvic_enable_irq(NVIC_TIM2_IRQ); /*to be verified if this may be placed here */
@@ -1034,7 +1050,7 @@ void st_prep_buffer()
   }
 #endif
 
-
+#ifdef TEST_NUCLEO
   /*Fill block/segment buffers for test purpose*/
   void fill_fake_prep_buffer(uint16_t fake_direction_bits,
   		                     uint32_t fake_steps_X_AXIS,
@@ -1329,3 +1345,4 @@ void st_prep_buffer()
           }
         }
   }
+#endif

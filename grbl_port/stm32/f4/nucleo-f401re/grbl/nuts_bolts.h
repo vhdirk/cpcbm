@@ -42,7 +42,11 @@
 // Conversions
 #define MM_PER_INCH (25.40)
 #define INCH_PER_MM (0.0393701)
+#ifdef NUCLEO
+#define TICKS_PER_MICROSECOND ((F_CPU/PSC_MUL_FACTOR)/1000000)
+#else
 #define TICKS_PER_MICROSECOND (F_CPU/1000000)
+#endif
 
 // Useful macros
 #define clear_vector(a) memset(a, 0, sizeof(a))
