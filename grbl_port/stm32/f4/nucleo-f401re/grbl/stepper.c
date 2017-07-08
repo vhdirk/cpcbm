@@ -234,15 +234,20 @@ void st_wake_up()
       OCR0A = -(((settings.pulse_microseconds)*TICKS_PER_MICROSECOND) >> 3);
 	  #endif
     #else // Normal operation
+	  #ifdef NUCLEO
+      st.step_pulse_time = (((settings.pulse_microseconds)*TICKS_PER_MICROSECOND) >> 3);
+      #else
       // Set step pulse time. Ad hoc computation from oscilloscope. Uses two's complement.
       st.step_pulse_time = -(((settings.pulse_microseconds-2)*TICKS_PER_MICROSECOND) >> 3);
+	  #endif
     #endif
 
     #ifdef NUCLEO
+    timer_clear_flag(TIM4, 0x1FFF);
     /* Enable TIM4 Stepper Driver Interrupt. */
     timer_enable_irq(TIM4, TIM_DIER_UIE); /** Capture/compare 1 interrupt enable */
     timer_enable_counter(TIM4); /* Counter enable. */
-    //timer_generate_event(TIM4, TIM_EGR_UG);
+    timer_generate_event(TIM4, TIM_EGR_UG);
     #else
     // Enable Stepper Driver Interrupt
     TIMSK1 |= (1<<OCIE1A);
@@ -257,7 +262,7 @@ void st_go_idle(void)
   #ifdef NUCLEO
   /* Disable TIM4 Stepper Driver Interrupt. */
   timer_disable_irq(TIM4, TIM_DIER_UIE); /** Capture/compare 1 interrupt enable */
-  timer_set_prescaler(TIM4, (1*PSC_MUL_FACTOR));// Reset clock to no prescaling, enabling is done before.
+  timer_set_prescaler(TIM4, ((1*PSC_MUL_FACTOR)-1));// Reset clock to no prescaling, enabling is done before.
   #else
   TIMSK1 &= ~(1<<OCIE1A); // Disable Timer1 interrupt
   TCCR1B = (TCCR1B & ~((1<<CS12) | (1<<CS11))) | (1<<CS10); // Reset clock to no prescaling.
@@ -356,7 +361,7 @@ ISR(TIMER1_COMPA_vect)
   // Enable step pulse reset timer so that The Stepper Port Reset Interrupt can reset the signal after
   // exactly settings.pulse_microseconds microseconds, independent of the main Timer1 prescaler.
   timer_set_period(TIM2, st.step_pulse_time); // Reload Timer2 counter
-  timer_set_prescaler(TIM2, 8*PSC_MUL_FACTOR); // Full speed, 1/8 prescaler
+  timer_set_prescaler(TIM2, (8*PSC_MUL_FACTOR)-1); // Full speed, 1/8 prescaler
   timer_enable_counter(TIM2);   // START Timer2 count. 
   
   #else
@@ -392,24 +397,23 @@ ISR(TIMER1_COMPA_vect)
       // Initialize new step segment and load number of steps to execute
       st.exec_segment = &segment_buffer[segment_buffer_tail];
 
-      #ifdef NUCLEO
-	  	  #ifndef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
-      timer_set_prescaler(TIM4, (PSC_MUL_FACTOR * st.exec_segment->prescaler));
-		  #endif
-      #else
-      #ifndef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
-        // With AMASS is disabled, set timer prescaler for segments with slow step frequencies (< 250Hz).
-        TCCR1B = (TCCR1B & ~(0x07<<CS10)) | (st.exec_segment->prescaler<<CS10);
-      #endif
-      #endif //NUCLEO
+#ifdef NUCLEO
+	#ifndef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
+  	  timer_set_prescaler(TIM4, ((PSC_MUL_FACTOR * st.exec_segment->prescaler)-1));
+	#endif
+#else
+	#ifndef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING
+      // With AMASS is disabled, set timer prescaler for segments with slow step frequencies (< 250Hz).
+      TCCR1B = (TCCR1B & ~(0x07<<CS10)) | (st.exec_segment->prescaler<<CS10);
+	#endif
+#endif //NUCLEO
 
       // Initialize step segment timing per step and load number of steps to execute.
-      #ifdef NUCLEO
-        timer_set_period(TIM4, st.exec_segment->cycles_per_tick);
-      //timer_set_oc_value(TIM4, TIM_OC1, st.exec_segment->cycles_per_tick);
-      #else
+#ifdef NUCLEO
+      timer_set_period(TIM4, st.exec_segment->cycles_per_tick);
+#else
       OCR1A = st.exec_segment->cycles_per_tick;
-      #endif
+#endif
       st.step_count = st.exec_segment->n_step; // NOTE: Can sometimes be zero when moving slow.
       // If the new segment starts a new planner block, initialize stepper variables and counters.
       // NOTE: When the segment data index changes, this indicates a new planner block.
@@ -968,7 +972,7 @@ void st_prep_buffer()
     prep.dt_remainder = (n_steps_remaining - steps_remaining)*inv_rate; // Update segment partial step time
 
     // Compute CPU cycles per step for the prepped segment.
-    uint32_t cycles = ceil( (TICKS_PER_MICROSECOND*1000000*60)*inv_rate ); // (cycles/step)    
+    uint32_t cycles = ceil( (TICKS_PER_MICROSECOND*60)*(1000000*inv_rate) ); // (cycles/step)
 
     #ifdef ADAPTIVE_MULTI_AXIS_STEP_SMOOTHING        
       // Compute step timing and multi-axis smoothing level.
