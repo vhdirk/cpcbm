@@ -153,14 +153,46 @@ void sys_tick_handler()//SysTick_Handler (void)
 
 void _delay_ms (double __ms)
 {
-  uint32_t start, end;
-  start = MILLIS;
-  end = start + __ms;
-  if (start < end) {
-    while ((MILLIS >= start) && (MILLIS < end)) {continue;}
-  } else {
-    while ((MILLIS >= start) || (MILLIS < end)) {continue;};
-  }
+	  uint32_t start, end;
+	  uint32_t uncounted = 1;
+	  uint32_t threshold = 10;
+	  uint32_t value = threshold;
+
+	  if(__ms == 0)
+		  return;
+
+	  SysTick_Init();
+
+	  start = MILLIS;
+	  end = start + __ms;
+	  if (start < end)
+	  {
+		while ((MILLIS >= start) && (MILLIS < end))
+		{
+			value = systick_get_value();
+			if((uncounted == 1) && (value < threshold))
+			{
+				ticks++;
+				uncounted = 0;
+			}
+			else if(value >= threshold)
+				uncounted = 1;
+		}
+	  }
+	  else
+	  {
+		  while ((MILLIS >= start) || (MILLIS < end))
+		  {
+				value = systick_get_value();
+				if((uncounted == 1) && (value < threshold))
+				{
+					ticks++;
+					uncounted = 0;
+				}
+				else if(value >= threshold)
+					uncounted = 1;
+		  }
+	  }
 }
 
 void delay_ms (uint16_t ms)
@@ -169,6 +201,9 @@ void delay_ms (uint16_t ms)
   uint32_t uncounted = 1;
   uint32_t threshold = 10;
   uint32_t value = threshold;
+
+  if(ms == 0)
+	  return;
 
   SysTick_Init();
 

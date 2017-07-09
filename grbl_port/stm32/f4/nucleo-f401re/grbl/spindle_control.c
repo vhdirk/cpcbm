@@ -57,12 +57,13 @@ void spindle_init()
     /* ARR reload enable. */
     timer_enable_preload(TIM3);
     // Disconnect OC1 output
-    timer_disable_oc_output(TIM3, TIM_OC1);
     timer_disable_oc_output(TIM3, TIM_OC2);
     timer_disable_oc_output(TIM3, TIM_OC3);
     timer_disable_oc_output(TIM3, TIM_OC4);
     /* Set output compare mode */
 	timer_set_oc_mode(TIM3, TIM_OC1, TIM_OCM_PWM1);
+	timer_enable_oc_output(TIM3, TIM_OC1);
+	gpio_set_af(GPIOA, 0x2, GPIO6);
     
     spindle_stop();
 }
@@ -110,7 +111,7 @@ void spindle_set_state(uint8_t state, float rpm)
 
     #ifdef VARIABLE_SPINDLE
         /* PWM settings done in the init, shall not need to be repeated. */
-        timer_set_prescaler(TIM3, 8);// set to 1/8 Prescaler
+        timer_set_prescaler(TIM3, (8*PSC_MUL_FACTOR)-1);// set to 1/8 Prescaler
         timer_set_oc_value(TIM3, TIM_OC1, 0xFFFF);// set the top 16bit value
         timer_set_period(TIM3, 0XFFFF);
         

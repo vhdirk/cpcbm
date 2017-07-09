@@ -206,15 +206,15 @@
 
 
 // Define spindle enable and spindle direction output pins.
-#define SPINDLE_ENABLE_DDR               GPIOB_MODER
-#define SPINDLE_ENABLE_PORT              GPIOB_ODR
+#define SPINDLE_ENABLE_DDR               GPIOA_MODER
+#define SPINDLE_ENABLE_PORT              GPIOA_ODR
 #define SPINDLE_ENABLE_BIT               6 // NucleoF401 Digital Pin 6
 #define SPINDLE_ENABLE_MASK_DDR          (1<<(SPINDLE_ENABLE_BIT*2)) // All (step bits*2) because the direction/mode has 2 bits
 #define SPINDLE_ENABLE_DDR_RESET_MASK    (0x3<<(SPINDLE_ENABLE_BIT*2))
 #define SPINDLE_ENABLE_MASK              (1<<SPINDLE_ENABLE_BIT)     // SPINDLE_ENABLE mask bit
 
-#define SPINDLE_DIRECTION_DDR               GPIOB_MODER
-#define SPINDLE_DIRECTION_PORT              GPIOB_ODR
+#define SPINDLE_DIRECTION_DDR               GPIOA_MODER
+#define SPINDLE_DIRECTION_PORT              GPIOA_ODR
 #define SPINDLE_DIRECTION_BIT               5 // NucleoF401 Digital Pin 5
 #define SPINDLE_DIRECTION_MASK_DDR          (1<<(SPINDLE_DIRECTION_BIT*2)) // All (step bits*2) because the direction/mode has 2 bits
 #define SPINDLE_DIRECTION_DDR_RESET_MASK    (0x3<<(SPINDLE_DIRECTION_BIT*2))
@@ -235,8 +235,8 @@
   #define WAVE2_REGISTER		WGM42
   #define WAVE3_REGISTER		WGM43
   
-  #define SPINDLE_PWM_DDR               GPIOB_MODER
-  #define SPINDLE_PWM_PORT              GPIOB_ODR
+  #define SPINDLE_PWM_DDR               GPIOA_MODER
+  #define SPINDLE_PWM_PORT              GPIOA_ODR
   #define SPINDLE_PWM_BIT               6 // NucleoF401 Digital Pin 6
   #define SPINDLE_PWM_MASK_DDR          (1<<(SPINDLE_PWM_BIT*2)) // All (step bits*2) because the direction/mode has 2 bits
   #define SPINDLE_PWM_DDR_RESET_MASK    (0x3<<(SPINDLE_PWM_BIT*2))
