@@ -54,16 +54,23 @@ void spindle_init()
      * - Direction up
      */
     timer_set_mode(TIM3, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-    /* ARR reload enable. */
+    timer_set_clock_division(TIM3, 0);            // Adjusts speed of timer
+   	timer_set_master_mode(TIM3, TIM_CR2_MMS_UPDATE);   // Master Mode Selection
+   	/* ARR reload enable. */
     timer_enable_preload(TIM3);
     // Disconnect OC1 output
     timer_disable_oc_output(TIM3, TIM_OC2);
     timer_disable_oc_output(TIM3, TIM_OC3);
     timer_disable_oc_output(TIM3, TIM_OC4);
     /* Set output compare mode */
-	timer_set_oc_mode(TIM3, TIM_OC1, TIM_OCM_PWM1);
+	timer_set_oc_mode(TIM3, TIM_OC1, TIM_OCM_PWM2);
+	timer_enable_oc_preload(TIM3, TIM_OC1);           // Sets OCxPE in TIMx_CCMRx
+	timer_set_oc_polarity_high(TIM3, TIM_OC1);        // set desired polarity in TIMx_CCER
 	timer_enable_oc_output(TIM3, TIM_OC1);
-	gpio_set_af(GPIOA, 0x2, GPIO6);
+
+
+	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
+	gpio_set_af(GPIOA, GPIO_AF2, GPIO6);
     
     spindle_stop();
 }
@@ -130,6 +137,9 @@ void spindle_set_state(uint8_t state, float rpm)
           if (current_pwm < MINIMUM_SPINDLE_PWM) { current_pwm = MINIMUM_SPINDLE_PWM; }
         #endif
         timer_set_oc_value(TIM3, TIM_OC1, current_pwm);// Set PWM pin output
+        timer_enable_oc_output(TIM3, TIM_OC1);
+        /* Generate update event to update shadow registers */
+    	timer_generate_event(TIM2, TIM_EGR_UG);
         /* Counter enable. */
         timer_enable_counter(TIM3); 
     
