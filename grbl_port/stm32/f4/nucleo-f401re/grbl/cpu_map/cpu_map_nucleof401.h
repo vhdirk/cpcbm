@@ -224,7 +224,7 @@
 #ifdef VARIABLE_SPINDLE
   // Advanced Configuration Below You should not need to touch these variables
   // Set Timer up to use TIMER4B which is attached to Digital Pin 7
-  #define PWM_MAX_VALUE       65535.0
+  #define PWM_MAX_VALUE       256.0
   #define TCCRA_REGISTER		TCCR4A
   #define TCCRB_REGISTER		TCCR4B
   #define OCR_REGISTER		OCR4B

@@ -63,7 +63,7 @@ void spindle_init()
     timer_disable_oc_output(TIM3, TIM_OC3);
     timer_disable_oc_output(TIM3, TIM_OC4);
     /* Set output compare mode */
-	timer_set_oc_mode(TIM3, TIM_OC1, TIM_OCM_PWM2);
+	timer_set_oc_mode(TIM3, TIM_OC1, TIM_OCM_PWM1);
 	timer_enable_oc_preload(TIM3, TIM_OC1);           // Sets OCxPE in TIMx_CCMRx
 	timer_set_oc_polarity_high(TIM3, TIM_OC1);        // set desired polarity in TIMx_CCER
 	timer_enable_oc_output(TIM3, TIM_OC1);
@@ -120,7 +120,7 @@ void spindle_set_state(uint8_t state, float rpm)
         /* PWM settings done in the init, shall not need to be repeated. */
         timer_set_prescaler(TIM3, (8*PSC_MUL_FACTOR)-1);// set to 1/8 Prescaler
         timer_set_oc_value(TIM3, TIM_OC1, 0xFFFF);// set the top 16bit value
-        timer_set_period(TIM3, 0XFFFF);
+        timer_set_period(TIM3, 0X00FF);
         
         uint16_t current_pwm;
 
