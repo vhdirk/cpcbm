@@ -59,9 +59,9 @@ void write_global_settings()
 // Method to store coord data parameters into EEPROM
 void settings_write_coord_data(uint8_t coord_select, float *coord_data)
 {
-  uint32_t addr = coord_select*(sizeof(float)*N_AXIS+1) + EFLASH_ADDR_PARAMETERS_MAIN;
-  uint32_t addr_copy = coord_select*(sizeof(float)*N_AXIS+1) + EFLASH_ADDR_PARAMETERS_COPY;
-  uint32_t status = flash_verify_erase_need((char *) addr, (char*)coord_data, ((unsigned int)sizeof(float)*N_AXIS + 1));
+  uint32_t addr = coord_select*(sizeof(float)*(N_AXIS+1)) + EFLASH_ADDR_PARAMETERS_MAIN;
+  uint32_t addr_copy = coord_select*(sizeof(float)*(N_AXIS+1)) + EFLASH_ADDR_PARAMETERS_COPY;
+  uint32_t status = flash_verify_erase_need((char *) addr, (char*)coord_data, ((unsigned int)sizeof(float)*(N_AXIS+1)));
 
   if (status == 0)
   {
@@ -75,8 +75,8 @@ void settings_write_coord_data(uint8_t coord_select, float *coord_data)
 	  memcpy_to_flash_with_checksum(addr_copy, (char*)coord_data, sizeof(float)*N_AXIS);
 
 	  //copy into copy-sector the rest of the main sector relevant parts
-	  copy_from_main_to_copy(((uint32_t)0), coord_select*(sizeof(float)*N_AXIS));
-	  copy_from_main_to_copy(((uint32_t)coord_select*sizeof(float)*(N_AXIS + 1)+1), ((uint32_t)EFLASH_ERASE_AND_RESTORE_OFFSET));
+	  copy_from_main_to_copy(((uint32_t)0), EFLASH_ADDR_PARAMETERS_OFFSET + coord_select*(sizeof(float)*(N_AXIS + 1)));
+	  copy_from_main_to_copy(EFLASH_ADDR_PARAMETERS_OFFSET + ((uint32_t)(coord_select+1)*sizeof(float)*(N_AXIS + 1)), ((uint32_t)EFLASH_ERASE_AND_RESTORE_OFFSET));
 
 	  //update status since main sector has been copied
       update_main_sector_status(MAIN_SECTOR_COPIED);
@@ -216,7 +216,7 @@ void settings_restore(uint8_t restore_flag) {
 
   if (restore_flag & SETTINGS_RESTORE_PARAMETERS) {
     uint8_t idx;
-    float coord_data[N_AXIS];
+    float coord_data[N_AXIS] = {0.0};
 #ifndef NUCLEO
     memset(&coord_data, 0, sizeof(coord_data));
 #endif
@@ -281,7 +281,7 @@ uint8_t settings_read_build_info(char *line)
 // Read selected coordinate data from FLASH. Updates pointed coord_data value.
 uint8_t settings_read_coord_data(uint8_t coord_select, float *coord_data)
 {
-  uint32_t addr = coord_select*(sizeof(float)*N_AXIS+1) + EFLASH_ADDR_PARAMETERS_MAIN;
+  uint32_t addr = coord_select*(sizeof(float)*(N_AXIS+1)) + EFLASH_ADDR_PARAMETERS_MAIN;
   if (!(memcpy_from_flash_with_checksum((char*)coord_data, addr, sizeof(float)*N_AXIS))) {
     // Reset with default zero vector
     clear_vector_float(coord_data);

@@ -128,10 +128,10 @@ void copy_from_main_to_copy(uint32_t start_address_offset, uint32_t end_address_
 
     flash_unlock();
 
-    for(uint32_t i = 0; (start_address_offset+i) < end_address_offset; i++)
+    for(uint32_t i = 0; (start_address_offset+(i<<2)) < end_address_offset; i++)
     {
         value = *(address+i); // new EFLASH value.
-        flash_program_word((start_address_offset+i+EFLASH_COPY_BASE_ADDRESS), value);
+        flash_program_word((start_address_offset+(i<<2)+EFLASH_COPY_BASE_ADDRESS), value);
     }
 
     flash_lock();
