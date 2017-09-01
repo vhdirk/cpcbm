@@ -104,8 +104,8 @@ void settings_store_startup_line(uint8_t n, char *line)
 	  memcpy_to_flash_with_checksum(addr_copy, (char*)line, LINE_BUFFER_SIZE);
 
 	  //copy into copy-sector the rest of the main sector relevant parts
-	  copy_from_main_to_copy(((uint32_t)0), n*(LINE_BUFFER_SIZE+1));
-	  copy_from_main_to_copy(((uint32_t)n*(LINE_BUFFER_SIZE+1)+LINE_BUFFER_SIZE), ((uint32_t)EFLASH_ERASE_AND_RESTORE_OFFSET));
+	  copy_from_main_to_copy(((uint32_t)0), EFLASH_ADDR_STARTUP_BLOCK_OFFSET + n*(LINE_BUFFER_SIZE+1) - 1);
+	  copy_from_main_to_copy(((uint32_t)n*(LINE_BUFFER_SIZE+1)+LINE_BUFFER_SIZE)+EFLASH_ADDR_STARTUP_BLOCK_OFFSET, ((uint32_t)EFLASH_ERASE_AND_RESTORE_OFFSET));
 
 	  //update status since main sector has been copied
       update_main_sector_status(MAIN_SECTOR_COPIED);
