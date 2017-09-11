@@ -201,7 +201,10 @@
 #define PROBE_DDR       GPIOC_MODER
 #define PROBE_PIN       GPIOC_IDR
 #define PROBE_PORT      GPIOC_ODR
-#define PROBE_BIT       0 // NucleoF401 Digital PC0
+#define PROBE_PU        GPIOC_PUPDR
+#define PROBE_BIT       4 // NucleoF401 Digital PC0
+#define PROBE_PU_MASK          (0x1<<(PROBE_BIT*2)) // X limit pull-up mask
+#define PROBE_PU_RESET_MASK    (0x3<<(PROBE_BIT*2)) // X limit dir mask
 #define PROBE_MASK      (1<<PROBE_BIT)
 
 
@@ -324,7 +327,7 @@
     LIMIT_Z_PU  |= LIMIT_Z_PU_MASK; \
     } while (0)
 
-/* set pull-up for limits pin */
+/* get limits pin status */
 #define GET_LIMIT_PIN \
   ((LIMIT_X_PIN & LIMIT_X_MASK) | (LIMIT_Y_PIN & LIMIT_Y_MASK) | (LIMIT_Z_PIN & LIMIT_Z_MASK))
 
@@ -398,3 +401,24 @@
   do { \
     SPINDLE_ENABLE_PORT &= ~SPINDLE_ENABLE_MASK;  \
   } while (0)
+
+/* set probe pin as inputs */
+#define SET_PROBE_DDR \
+do{ \
+	PROBE_DDR &= ~PROBE_PU_RESET_MASK; \
+} while (0)
+
+/* unset pull-up for limits pin */
+#define UNSET_PROBE_PU \
+do{ \
+	PROBE_PU  &= ~PROBE_PU_RESET_MASK; \
+} while (0)
+
+/* set pull-up for limits pin */
+#define SET_PROBE_PU \
+do{ \
+	PROBE_PU  &= ~PROBE_PU_RESET_MASK; \
+	PROBE_PU  |= PROBE_PU_MASK; \
+} while (0)
+
+

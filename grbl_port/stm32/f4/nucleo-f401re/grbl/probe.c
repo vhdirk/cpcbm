@@ -28,6 +28,15 @@ uint8_t probe_invert_mask;
 // Probe pin initialization routine.
 void probe_init() 
 {
+#ifdef NUCLEO
+  rcc_periph_clock_enable(RCC_GPIOH);
+  SET_PROBE_DDR;
+  #ifdef DISABLE_PROBE_PIN_PULL_UP
+    UNSET_PROBE_PU; // Normal low operation. Requires external pull-down.
+  #else
+    SET_PROBE_PU;    // Enable internal pull-up resistors. Normal high operation.
+  #endif
+#else
   PROBE_DDR &= ~(PROBE_MASK); // Configure as input pins
   #ifdef DISABLE_PROBE_PIN_PULL_UP
     PROBE_PORT &= ~(PROBE_MASK); // Normal low operation. Requires external pull-down.
@@ -35,6 +44,7 @@ void probe_init()
     PROBE_PORT |= PROBE_MASK;    // Enable internal pull-up resistors. Normal high operation.
   #endif
   // probe_configure_invert_mask(false); // Initialize invert mask. Not required. Updated when in-use.
+#endif
 }
 
 
