@@ -443,11 +443,7 @@ ISR(TIMER1_COMPA_vect)
   
   
   // Check probing state.
-  #ifdef NUCLEO
-  //TOBE DONE
-  #else
   probe_state_monitor();
-  #endif //NUCLEO
    
   // Reset step out bits.
   st.step_outbits = 0; 
