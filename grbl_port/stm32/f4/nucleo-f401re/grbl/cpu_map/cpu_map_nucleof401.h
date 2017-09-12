@@ -1,5 +1,5 @@
 /*
-  cpu_map_atmega2560.h - CPU and pin mapping configuration file
+  cpu_map_nucleof401.h - CPU and pin mapping configuration file
   Part of Grbl
 
   Copyright (c) 2012-2015 Sungeun K. Jeon
@@ -18,7 +18,7 @@
   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/* This cpu_map file serves as a central pin mapping settings file for AVR Mega 2560 */
+/* This cpu_map file serves as a central pin mapping settings file for ST Nucleo F401 */
 
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
@@ -30,8 +30,6 @@
 #define F_CPU (16000000)
 #define PSC_MUL_FACTOR 1
 #else
-//#define F_CPU (84000000)
-//#define PSC_MUL_FACTOR 8
 #define F_CPU (48000000)
 #define PSC_MUL_FACTOR 3
 #endif
@@ -119,7 +117,7 @@
 #define LIMIT_Z_PORT              GPIOB_ODR
 #define LIMIT_Z_PIN               GPIOB_IDR
 #define LIMIT_Z_PU                GPIOB_PUPDR
-#define Z_LIMIT_BIT               0 // NucleoF401 Digital PC0
+#define Z_LIMIT_BIT               0 // NucleoF401 Digital PB0
 #define LIMIT_Z_PU_MASK           (0x1<<(Z_LIMIT_BIT*2)) // Z limit pull-up mask
 #define LIMIT_Z_PU_RESET_MASK     ((0x3<<(Z_LIMIT_BIT*2))) // Z limit dir mask
 #define LIMIT_Z_MASK              (1<<Z_LIMIT_BIT) // Y limit bits
@@ -202,7 +200,7 @@
 #define PROBE_PIN       GPIOC_IDR
 #define PROBE_PORT      GPIOC_ODR
 #define PROBE_PU        GPIOC_PUPDR
-#define PROBE_BIT       4 // NucleoF401 Digital PC0
+#define PROBE_BIT       0 // NucleoF401 Digital PC0
 #define PROBE_PU_MASK          (0x1<<(PROBE_BIT*2)) // X limit pull-up mask
 #define PROBE_PU_RESET_MASK    (0x3<<(PROBE_BIT*2)) // X limit dir mask
 #define PROBE_MASK      (1<<PROBE_BIT)
