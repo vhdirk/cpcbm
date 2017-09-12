@@ -20,9 +20,7 @@
 */
 
 #include "grbl.h"
-//#include "system.h"
 
-//#define NUCLEO
 #ifdef NUCLEO
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>

@@ -113,8 +113,6 @@ float hypot_f(float x, float y) { return(sqrt(x*x + y*y)); }
 
 #ifdef NUCLEO
 
-#if 1 //TODO: remove it when debug is done
-
 static inline uint32_t SysTick_Config_polling(uint32_t n_ticks)
 {
 	/* constant from systick_set_reload -- as this returns something that's
@@ -253,32 +251,6 @@ void delay_1_ms()
 	  }
 }
 
-#else
-
-void _delay_ms(double __ms)
-{
-	volatile uint32_t counter = round(F_CPU/1000/__ms);
-	while(counter--)
-	{continue;}
-}
-
-void delay_1_ms()
-{
-	volatile uint32_t counter = F_CPU/1000;
-	//volatile uint32_t counter = F_CPU/5000;
-	while(counter--)
-	{continue;}
-}
-
-
-// Delays variable defined milliseconds. Compiler compatibility fix for _delay_ms(),
-// which only accepts constants in future compiler releases.
-void delay_ms(uint16_t ms)
-{
-  while ( ms-- ) { delay_1_ms(); }
-}
-
-#endif
 
 #else
 // Delays variable defined microseconds. Compiler compatibility fix for _delay_us(),
