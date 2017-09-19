@@ -169,7 +169,7 @@ void usart2_isr(void)
 {
 	if(usart_get_interrupt_source(USART2, USART_SR_RXNE))
 	{		
-	  uint8_t data = (uint8_t)usart_recv(USART2);
+	  uint8_t data = (uint8_t)USART_DR(USART2) & USART_DR_MASK;//usart_recv(USART2);
 	  uint8_t next_head;
 	  
 	  // Pick off realtime command characters directly from the serial stream. These characters are

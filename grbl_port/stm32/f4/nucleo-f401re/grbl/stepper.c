@@ -658,6 +658,7 @@ void stepper_init()
     timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
     /* Enable TIM4 interrupt. */
     nvic_enable_irq(NVIC_TIM4_IRQ); /*to be verified if this may be placed here */
+	nvic_set_priority(NVIC_TIM4_IRQ, 0x40); /* lower interrupt priority with pre-emption */
     
     /* Enable TIM2 interrupt. */
     nvic_enable_irq(NVIC_TIM2_IRQ); /*to be verified if this may be placed here */
