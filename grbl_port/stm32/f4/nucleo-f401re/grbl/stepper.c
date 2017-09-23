@@ -34,6 +34,7 @@
 #define RAMP_ACCEL 0
 #define RAMP_CRUISE 1
 #define RAMP_DECEL 2
+#define TIMEOUT_COUNTER 100000
 
 // Define Adaptive Multi-Axis Step-Smoothing(AMASS) levels and cutoff frequencies. The highest level
 // frequency bin starts at 0Hz and ends at its cutoff frequency. The next lower level frequency bin
@@ -1022,13 +1023,13 @@ void st_prep_buffer()
         plan_cycle_reinitialize(); 
         return; // Bail!
       } else { // End of planner block
+    	// Check if there is any segment pending to be executed before discarding block
+    	volatile int index = 0;
+    	while((segment_buffer_tail != segment_buffer_head) && index < TIMEOUT_COUNTER){index++;}
+
         // The planner block is complete. All steps are set to be executed in the segment buffer.
         pl_block = NULL; // Set pointer to indicate check and load next planner block.
         plan_discard_current_block();
-        if(segment_buffer_tail != segment_buffer_head)
-        {
-        	segment_buffer_tail = segment_buffer_head;
-        }
       }
     }
 
