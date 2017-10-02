@@ -1,5 +1,0 @@
-# README
-
-
-## Board connections
-

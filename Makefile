@@ -36,15 +36,15 @@ MAKEFLAGS += --no-print-directory
 endif
 
 OPENCM3_DIR ?= $(realpath libopencm3)
-EXAMPLE_RULES = elf
+GRBL_PORT_RULES = elf
 
 all: build
 
-bin: EXAMPLE_RULES += bin
-hex: EXAMPLE_RULES += hex
-srec: EXAMPLE_RULES += srec
-list: EXAMPLE_RULES += list
-images: EXAMPLE_RULES += images
+bin: GRBL_PORT_RULES += bin
+hex: GRBL_PORT_RULES += hex
+srec: GRBL_PORT_RULES += srec
+list: GRBL_PORT_RULES += list
+images: GRBL_PORT_RULES += images
 
 bin: build
 hex: build
@@ -52,7 +52,7 @@ srec: build
 list: build
 images: build
 
-build: lib examples
+build: lib grbl_port
 
 lib:
 	$(Q)if [ ! "`ls -A $(OPENCM3_DIR)`" ] ; then \
@@ -67,24 +67,19 @@ lib:
 		fi
 	$(Q)$(MAKE) -C $(OPENCM3_DIR)
 
-EXAMPLE_DIRS:=$(sort $(dir $(wildcard $(addsuffix /*/*/Makefile,$(addprefix examples/,$(TARGETS))))))
-$(EXAMPLE_DIRS): lib
-	@printf "  BUILD   $@\n";
-	$(Q)$(MAKE) --directory=$@ OPENCM3_DIR=$(OPENCM3_DIR) $(EXAMPLE_RULES)
-
 GRBL_PORT_DIRS:=$(sort $(dir $(wildcard $(addsuffix /*/*/Makefile,$(addprefix grbl_port/,$(TARGETS))))))
 $(GRBL_PORT_DIRS): lib
 	@printf "  BUILD   $@\n";
 	$(Q)$(MAKE) --directory=$@ OPENCM3_DIR=$(OPENCM3_DIR) $(EXAMPLE_RULES)
 	
-examples: $(EXAMPLE_DIRS) $(GRBL_PORT_DIRS)
+grbl_port: $(GRBL_PORT_DIRS)
 	$(Q)true
 
-clean: $(EXAMPLE_DIRS:=.clean) $(GRBL_PORT_DIRS:=.clean) styleclean
+clean: $(GRBL_PORT_DIRS:=.clean) styleclean
 	$(Q)$(MAKE) -C libopencm3 clean
 
-stylecheck: $(EXAMPLE_DIRS:=.stylecheck) $(GRBL_PORT_DIRS:=.stylecheck)
-styleclean: $(EXAMPLE_DIRS:=.styleclean) $(GRBL_PORT_DIRS:=.styleclean)
+stylecheck: $(GRBL_PORT_DIRS:=.stylecheck)
+styleclean: $(GRBL_PORT_DIRS:=.styleclean)
 
 
 %.clean:
@@ -100,6 +95,6 @@ styleclean: $(EXAMPLE_DIRS:=.styleclean) $(GRBL_PORT_DIRS:=.styleclean)
 	$(Q)$(MAKE) -C $* stylecheck OPENCM3_DIR=$(OPENCM3_DIR)
 
 
-.PHONY: build lib examples $(EXAMPLE_DIRS) install clean stylecheck styleclean \
+.PHONY: build lib grbl_port $(GRBL_PORT_DIRS) install clean stylecheck styleclean \
         bin hex srec list images
 
