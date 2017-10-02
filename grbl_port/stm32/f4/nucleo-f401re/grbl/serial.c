@@ -167,7 +167,7 @@ uint8_t serial_read()
 #ifdef NUCLEO
 void usart2_isr(void)
 {
-	if(usart_get_interrupt_source(USART2, USART_SR_RXNE))
+	if(((USART_SR(USART2) & USART_SR_RXNE)  & USART_CR1(USART2)) != 0)
 	{		
 	  uint8_t data = (uint8_t)USART_DR(USART2) & USART_DR_MASK;//usart_recv(USART2);
 	  uint8_t next_head;
@@ -191,7 +191,7 @@ void usart2_isr(void)
 		  }
 	  }
 	}
-	if(usart_get_interrupt_source(USART2, USART_SR_TXE))
+	if(((USART_SR(USART2) & USART_SR_TXE)  & USART_CR1(USART2)) != 0)
 	{
 		uint8_t tail = serial_tx_buffer_tail; // Temporary serial_tx_buffer_tail (to optimize for volatile)
 
