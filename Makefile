@@ -70,7 +70,7 @@ lib:
 GRBL_PORT_DIRS:=$(sort $(dir $(wildcard $(addsuffix /*/*/Makefile,$(addprefix grbl_port/,$(TARGETS))))))
 $(GRBL_PORT_DIRS): lib
 	@printf "  BUILD   $@\n";
-	$(Q)$(MAKE) --directory=$@ OPENCM3_DIR=$(OPENCM3_DIR) $(EXAMPLE_RULES)
+	$(Q)$(MAKE) --directory=$@ OPENCM3_DIR=$(OPENCM3_DIR) $(GRBL_PORT_RULES)
 	
 grbl_port: $(GRBL_PORT_DIRS)
 	$(Q)true
