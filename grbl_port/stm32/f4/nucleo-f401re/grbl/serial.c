@@ -28,8 +28,8 @@
 #endif
 
 uint8_t serial_rx_buffer[RX_BUFFER_SIZE];
-uint8_t serial_rx_buffer_head = 0;
-volatile uint8_t serial_rx_buffer_tail = 0;
+uint32_t serial_rx_buffer_head = 0;
+volatile uint32_t serial_rx_buffer_tail = 0;
 
 uint8_t serial_tx_buffer[TX_BUFFER_SIZE];
 uint8_t serial_tx_buffer_head = 0;
@@ -142,7 +142,7 @@ void serial_write(uint8_t data) {
 // Fetches the first byte in the serial read buffer. Called by main program.
 uint8_t serial_read()
 {
-  uint8_t tail = serial_rx_buffer_tail; // Temporary serial_rx_buffer_tail (to optimize for volatile)
+  uint32_t tail = serial_rx_buffer_tail; // Temporary serial_rx_buffer_tail (to optimize for volatile)
   if (serial_rx_buffer_head == tail) {
     return SERIAL_NO_DATA;
   } else {
@@ -170,7 +170,7 @@ void usart2_isr(void)
 	if(((USART_SR(USART2) & USART_SR_RXNE)  & USART_CR1(USART2)) != 0)
 	{		
 	  uint8_t data = (uint8_t)USART_DR(USART2) & USART_DR_MASK;//usart_recv(USART2);
-	  uint8_t next_head;
+	  uint32_t next_head;
 	  
 	  // Pick off realtime command characters directly from the serial stream. These characters are
 	  // not passed into the buffer, but these set system state flag bits for realtime execution.

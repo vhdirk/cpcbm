@@ -24,7 +24,7 @@
 
 
 #ifndef RX_BUFFER_SIZE
-  #define RX_BUFFER_SIZE 128
+  #define RX_BUFFER_SIZE 1024
 #endif
 #ifndef TX_BUFFER_SIZE
   #define TX_BUFFER_SIZE 64
