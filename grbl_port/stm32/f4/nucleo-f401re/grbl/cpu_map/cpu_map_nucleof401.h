@@ -44,6 +44,8 @@
 
 #define GRBL_PLATFORM "NucleoF401"
 
+#define USE_RX_DMA
+
 // Serial port pins
 // #define SERIAL_RX USART0_RX_vect
 // #define SERIAL_UDRE USART0_UDRE_vect

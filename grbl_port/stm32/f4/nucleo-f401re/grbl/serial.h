@@ -61,4 +61,9 @@ uint8_t serial_get_rx_buffer_count(void);
 // NOTE: Not used except for debugging and ensuring no TX bottlenecks.
 uint8_t serial_get_tx_buffer_count(void);
 
+
+#ifdef USE_RX_DMA
+void serial_rx_dma_init(void);
+#endif
+
 #endif

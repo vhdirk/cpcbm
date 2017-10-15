@@ -58,9 +58,9 @@
 // Bit field and masking macros
 #define bit(n) (1 << n) 
 #ifdef NUCLEO
-#define bit_true_atomic(x,mask)   {__disable_irq(); (x) |= (mask);  __enable_irq(); }
-#define bit_false_atomic(x,mask)  {__disable_irq(); (x) &= ~(mask); __enable_irq(); }
-#define bit_toggle_atomic(x,mask) {__disable_irq(); (x) ^= (mask);  __enable_irq(); }
+#define bit_true_atomic(x,mask)   {__asm__ volatile ("CPSID I\n"); (x) |= (mask);  __asm__ volatile ("CPSIE I\n"); }
+#define bit_false_atomic(x,mask)  {__asm__ volatile ("CPSID I\n"); (x) &= ~(mask); __asm__ volatile ("CPSIE I\n"); }
+#define bit_toggle_atomic(x,mask) {__asm__ volatile ("CPSID I\n"); (x) ^= (mask);  __asm__ volatile ("CPSIE I\n"); }
 #else
 #define bit_true_atomic(x,mask) {uint8_t sreg = SREG; cli(); (x) |= (mask); SREG = sreg; }
 #define bit_false_atomic(x,mask) {uint8_t sreg = SREG; cli(); (x) &= ~(mask); SREG = sreg; }
