@@ -25,8 +25,6 @@
 // Declare system global variable structure
 system_t sys; 
 
-#ifndef TEST_NUCLEO
-
 int main(void)
 {
 #ifdef NUCLEO
@@ -115,76 +113,4 @@ int main(void)
   }
   return 0;   /* Never reached */
 }
-
-#else
-int main(void)
-{
-#ifdef TEST_FLASH_GLOBAL_PARAMS
-	flash_put_char( ((unsigned int)EFLASH_ADDR_GLOBAL_MAIN), ((unsigned char)0x0));
-	flash_put_char( ((unsigned int)EFLASH_ADDR_GLOBAL_MAIN+1), ((unsigned char)0x0));
-	flash_put_char( ((unsigned int)EFLASH_ADDR_GLOBAL_MAIN+2), ((unsigned char)0x0));
-	flash_put_char( ((unsigned int)EFLASH_ADDR_GLOBAL_MAIN+3), ((unsigned char)0x0));
-#endif
-
-	settings_init(); // Load Grbl settings from memory
-	settings_restore(SETTINGS_RESTORE_ALL);
-
-	serial_init();
-	report_init_message();
-
-	stepper_init();  // Configure stepper pins and interrupt timers
-
-	st_reset();
-
-	// Reset system variables.
-	sys.abort = false;
-	sys_rt_exec_state = 0;
-	sys_rt_exec_alarm = 0;
-	sys.suspend = false;
-	sys.soft_limit = false;
-
-	sys.state = STATE_CYCLE;
-
-
-	system_init();   // Configure pinout pins and pin-change interrupt
-	limits_init();
-
-	uint32_t counter = 0;
-	uint16_t temp_dir_bits;
-	uint32_t steps_x;
-	uint32_t steps_y;
-	uint32_t steps_z;
-	uint32_t steps_event_count;
-	while(1){
-		temp_dir_bits = 0x510;
-		steps_x = 0;
-		steps_y = 0;
-		steps_z = 0;
-
-		switch(counter%3)
-		{
-		case 0:
-			steps_x = 100;
-			break;
-		case 1:
-			steps_y = 100;
-			break;
-		case 2:
-			steps_z = 100;
-			break;
-		default:
-			break;
-		}
-		steps_event_count = 0;//counter % 5;
-		counter++;
-
-		fill_fake_prep_buffer(temp_dir_bits,steps_x,steps_y,steps_z,steps_event_count);
-		//st_prep_buffer(); // Initialize step segment buffer before beginning cycle.
-		st_wake_up();
-	}
-
-   // while(1);
-    return 0;
-}
-#endif
 
