@@ -44,8 +44,6 @@
 
 #define GRBL_PLATFORM "NucleoF401"
 
-#define USE_RX_DMA
-
 // Serial port pins
 // #define SERIAL_RX USART0_RX_vect
 // #define SERIAL_UDRE USART0_UDRE_vect
@@ -246,22 +244,21 @@
   #define SPINDLE_PWM_MASK              (1<<SPINDLE_PWM_BIT)     // SPINDLE_PWM mask bit
 #endif // End of VARIABLE_SPINDLE
 
-
-/* TO BE DONE: CORRECT THE FOLLOWING CONFIGURATION FOR NUCLEO PINOUT ONLY FLOOD/COOLANT */
-
 // Define flood and mist coolant enable output pins.
-// NOTE: Uno analog pins 4 and 5 are reserved for an i2c interface, and may be installed at
-// a later date if flash and memory space allows.
-#define COOLANT_FLOOD_DDR     DDRH
-#define COOLANT_FLOOD_PORT    PORTH
-#define COOLANT_FLOOD_BIT     5 // MEGA2560 Digital Pin 8
+#define COOLANT_FLOOD_DDR               GPIOC_MODER
+#define COOLANT_FLOOD_PORT              GPIOC_ODR
+#define COOLANT_FLOOD_BIT               1 // NucleoF401 Digital Pin 2
+#define COOLANT_FLOOD_MASK_DDR          (1<<(COOLANT_FLOOD_BIT*2)) // All (step bits*2) because the direction/mode has 2 bits
+#define COOLANT_FLOOD_DDR_RESET_MASK    (0x3<<(COOLANT_FLOOD_BIT*2))
+#define COOLANT_FLOOD_MASK              (1<<COOLANT_FLOOD_BIT)     // COOLANT_FLOOD mask bit
 #ifdef ENABLE_M7 // Mist coolant disabled by default. See config.h to enable/disable.
-#define COOLANT_MIST_DDR    DDRH
-#define COOLANT_MIST_PORT   PORTH
-#define COOLANT_MIST_BIT    6 // MEGA2560 Digital Pin 9
-#endif  
-
-
+#define COOLANT_MIST_DDR               GPIOC_MODER
+#define COOLANT_MIST_PORT              GPIOC_ODR
+#define COOLANT_MIST_BIT               2 // NucleoF401 Digital Pin 1
+#define COOLANT_MIST_MASK_DDR          (1<<(COOLANT_MIST_BIT*2)) // All (step bits*2) because the direction/mode has 2 bits
+#define COOLANT_MIST_DDR_RESET_MASK    (0x3<<(COOLANT_MIST_BIT*2))
+#define COOLANT_MIST_MASK              (1<<COOLANT_MIST_BIT)     // COOLANT_MIST mask bit
+#endif
 
 #define SET_STEP_DDR \
   do { \
@@ -421,4 +418,36 @@ do{ \
 	PROBE_PU  |= PROBE_PU_MASK; \
 } while (0)
 
+#define SET_COOLANT_FLOOD_DDR \
+  do { \
+    COOLANT_FLOOD_DDR &= ~COOLANT_FLOOD_DDR_RESET_MASK; \
+    COOLANT_FLOOD_DDR |= COOLANT_FLOOD_DDR; \
+  } while (0)
 
+#define SET_COOLANT_FLOOD_BIT \
+  do { \
+    COOLANT_FLOOD_PORT |= COOLANT_FLOOD_MASK; \
+  } while (0)
+
+#define UNSET_COOLANT_FLOOD_BIT \
+  do { \
+    COOLANT_FLOOD_PORT &= ~(COOLANT_FLOOD_MASK); \
+  } while (0)
+
+
+#define SET_COOLANT_MIST_DDR \
+  do { \
+    COOLANT_MIST_DDR &= ~COOLANT_MIST_DDR_RESET_MASK; \
+    COOLANT_MIST_DDR |= COOLANT_MIST_DDR; \
+  } while (0)
+
+
+#define SET_COOLANT_MIST_BIT \
+  do { \
+    COOLANT_MIST_PORT |= COOLANT_MIST_MASK; \
+  } while (0)
+
+#define UNSET_COOLANT_MIST_BIT \
+  do { \
+    COOLANT_MIST_PORT &= ~(COOLANT_MIST_MASK); \
+  } while (0)

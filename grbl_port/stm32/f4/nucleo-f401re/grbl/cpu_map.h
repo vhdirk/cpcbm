@@ -1,21 +1,22 @@
 /*
   cpu_map.h - CPU and pin mapping configuration file
-  Part of Grbl
+  Part of grbl_port_opencm3 project, derived from the Grbl work.
 
+  Copyright (c) 2017 Angelo Di Chello
   Copyright (c) 2012-2015 Sungeun K. Jeon
 
-  Grbl is free software: you can redistribute it and/or modify
+  Grbl_port_opencm3 is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
 
-  Grbl is distributed in the hope that it will be useful,
+  Grbl_port_opencm3 is distributed in the hope that it will be useful,
   but WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
+  along with Grbl_port_opencm3.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 /* The cpu_map.h files serve as a central pin mapping selection file for different processor
