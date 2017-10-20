@@ -22,7 +22,7 @@
 
 #include "grbl.h"
 
-#ifdef NUCLEO
+#ifdef NUCLEO_F401
 
 #include <libopencm3/stm32/timer.h>
 
@@ -279,7 +279,7 @@ void spindle_set_state(uint8_t state, float rpm)
   }
 }
 
-#endif //NUCLEO
+#endif //NUCLEO_F401
 
 void spindle_run(uint8_t state, float rpm)
 {

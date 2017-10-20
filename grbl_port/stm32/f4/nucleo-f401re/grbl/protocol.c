@@ -34,7 +34,7 @@ static char line[LINE_BUFFER_SIZE]; // Line to be executed. Zero-terminated.
 // Directs and executes one line of formatted input from protocol_process. While mostly
 // incoming streaming g-code blocks, this also directs and executes Grbl internal commands,
 // such as settings, initiating the homing cycle, and toggling switch states.
-static void protocol_execute_line(char *line) 
+static void protocol_execute_line(void)
 {      
   protocol_execute_realtime(); // Runtime command check point.
   if (sys.abort) { return; } // Bail to calling function upon system abort  
@@ -110,7 +110,7 @@ void protocol_main_loop()
     while((c = serial_read()) != SERIAL_NO_DATA) {
       if ((c == '\n') || (c == '\r')) { // End of line reached
         line[char_counter] = 0; // Set string termination character.
-        protocol_execute_line(line); // Line is complete. Execute it!
+        protocol_execute_line(); // Line is complete. Execute it!
         comment = COMMENT_NONE;
         char_counter = 0;
       } else {

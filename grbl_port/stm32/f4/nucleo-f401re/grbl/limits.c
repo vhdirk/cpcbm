@@ -36,7 +36,7 @@
 
 void limits_init() 
 {
-#ifdef NUCLEO
+#ifdef NUCLEO_F401
     rcc_periph_clock_enable(RCC_GPIOB);
     rcc_periph_clock_enable(RCC_GPIOC);
     rcc_periph_clock_enable(RCC_SYSCFG);
@@ -93,14 +93,14 @@ void limits_init()
     WDTCSR |= (1<<WDCE) | (1<<WDE);
     WDTCSR = (1<<WDP0); // Set time-out at ~32msec.
   #endif
-#endif //ifdef NUCLEO
+#endif //ifdef NUCLEO_F401
 }
 
 
 // Disables hard limits.
 void limits_disable()
 {
-#ifdef NUCLEO
+#ifdef NUCLEO_F401
 	nvic_disable_irq(LIMIT_INT);// Disable Limits pins Interrupt
 #else
   LIMIT_PCMSK &= ~LIMIT_MASK;  // Disable specific pins of the Pin Change Interrupt
@@ -115,7 +115,7 @@ void limits_disable()
 uint8_t limits_get_state()
 {
   uint8_t limit_state = 0;
-#ifdef NUCLEO
+#ifdef NUCLEO_F401
   uint8_t pin = GET_LIMIT_PIN;
 #else
   uint8_t pin = (LIMIT_PIN & LIMIT_MASK);
@@ -146,7 +146,7 @@ uint8_t limits_get_state()
 // special pinout for an e-stop, but it is generally recommended to just directly connect
 // your e-stop switch to the Arduino reset pin, since it is the most correct way to do this.
 #ifndef ENABLE_SOFTWARE_DEBOUNCE
-#ifdef NUCLEO
+#ifdef NUCLEO_F401
 void exti0_isr()
 {
 	exti_reset_request(LIMIT_INT_vect_Z);
@@ -276,7 +276,20 @@ void limits_go_home(uint8_t cycle_mask)
       // Set target location for active axes and setup computation for homing rate.
       if (bit_istrue(cycle_mask,bit(idx))) {
         n_active_axis++;
+        #ifdef COREXY
+          if (idx == X_AXIS) {
+            int32_t axis_position = system_convert_corexy_to_y_axis_steps(sys.position);
+            sys.position[A_MOTOR] = axis_position;
+            sys.position[B_MOTOR] = -axis_position;
+          } else if (idx == Y_AXIS) {
+            int32_t axis_position = system_convert_corexy_to_x_axis_steps(sys.position);
+            sys.position[A_MOTOR] = sys.position[B_MOTOR] = axis_position;
+          } else { 
+            sys.position[Z_AXIS] = 0; 
+          }
+        #else
         sys.position[idx] = 0;
+        #endif
         // Set target direction based on cycle mask and homing cycle approach state.
         // NOTE: This happens to compile smaller than any other implementation tried.
         if (bit_istrue(settings.homing_dir_mask,bit(idx))) {
@@ -311,7 +324,14 @@ void limits_go_home(uint8_t cycle_mask)
         limit_state = limits_get_state();
         for (idx=0; idx<N_AXIS; idx++) {
           if (axislock & step_pin[idx]) {
-            if (limit_state & (1 << idx)) { axislock &= ~(step_pin[idx]); }
+            if (limit_state & (1 << idx)) { 
+              #ifdef COREXY
+                if (idx==Z_AXIS) { axislock &= ~(step_pin[Z_AXIS]); }
+                else { axislock &= ~(step_pin[A_MOTOR]|step_pin[B_MOTOR]); }
+              #else
+                axislock &= ~(step_pin[idx]); 
+              #endif
+            }
           }
         }
         sys.homing_axis_lock = axislock;
@@ -334,7 +354,7 @@ void limits_go_home(uint8_t cycle_mask)
           break;
         } 
       }
-#ifdef NUCLEO
+#ifdef NUCLEO_F401
     } while ((STEP_MASK_X | STEP_MASK_YZ) & axislock);
 #else
     } while (STEP_MASK & axislock);
@@ -364,9 +384,6 @@ void limits_go_home(uint8_t cycle_mask)
   // set up pull-off maneuver from axes limit switches that have been homed. This provides
   // some initial clearance off the switches and should also help prevent them from falsely
   // triggering when hard limits are enabled or when more than one axes shares a limit pin.
-  #ifdef COREXY
-    int32_t off_axis_position = 0;
-  #endif
   int32_t set_axis_position;
   // Set machine positions for homed limit switches. Don't update non-homed axes.
   for (idx=0; idx<N_AXIS; idx++) {
@@ -384,13 +401,13 @@ void limits_go_home(uint8_t cycle_mask)
       
       #ifdef COREXY
         if (idx==X_AXIS) { 
-          off_axis_position = (sys.position[B_MOTOR] - sys.position[A_MOTOR])/2;
-          sys.position[A_MOTOR] = set_axis_position - off_axis_position;
-          sys.position[B_MOTOR] = set_axis_position + off_axis_position;          
+          int32_t off_axis_position = system_convert_corexy_to_y_axis_steps(sys.position);
+          sys.position[A_MOTOR] = set_axis_position + off_axis_position;
+          sys.position[B_MOTOR] = set_axis_position - off_axis_position;          
         } else if (idx==Y_AXIS) {
-          off_axis_position = (sys.position[A_MOTOR] + sys.position[B_MOTOR])/2;
-          sys.position[A_MOTOR] = off_axis_position - set_axis_position;
-          sys.position[B_MOTOR] = off_axis_position + set_axis_position;
+          int32_t off_axis_position = system_convert_corexy_to_x_axis_steps(sys.position);
+          sys.position[A_MOTOR] = off_axis_position + set_axis_position;
+          sys.position[B_MOTOR] = off_axis_position - set_axis_position;
         } else {
           sys.position[idx] = set_axis_position;
         }        

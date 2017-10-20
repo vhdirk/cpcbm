@@ -29,8 +29,8 @@
 
 #include "grbl.h"
 
-/* PSTR arduino substituted momentarily */
-#ifdef NUCLEO
+/* PSTR arduino substituted */
+#ifdef NUCLEO_F401
 #define PSTR(s) s
 #endif
 
@@ -512,4 +512,3 @@ void report_realtime_status()
   
   printPgmString(PSTR(">\r\n"));
 }
-

@@ -38,7 +38,7 @@
   #include "cpu_map/cpu_map_atmega2560.h"
 #endif
 
-#ifdef NUCLEO // (NUCLEO) Working @EliteEng
+#ifdef NUCLEO_F401 // (NUCLEO_F401)
   #include "cpu_map/cpu_map_nucleof401.h"
 #endif
 /* 

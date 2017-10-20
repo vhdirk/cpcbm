@@ -26,9 +26,10 @@
 // Declare system global variable structure
 system_t sys; 
 
+
 int main(void)
 {
-#ifdef NUCLEO
+#ifdef NUCLEO_F401
 #ifndef BASIC_CPU_SPEED
 	const struct rcc_clock_scale rcc_hse_8mhz_3v3_no_prescalers =
 	{ /* 48MHz */
@@ -58,7 +59,7 @@ int main(void)
 
   memset(&sys, 0, sizeof(system_t));  // Clear all system variables
   sys.abort = true;   // Set abort to complete initialization
-#ifdef NUCLEO
+#ifdef NUCLEO_F401
   __enable_irq(); // Global enable interrupts
 #else
   sei(); // Enable interrupts
@@ -114,4 +115,3 @@ int main(void)
   }
   return 0;   /* Never reached */
 }
-

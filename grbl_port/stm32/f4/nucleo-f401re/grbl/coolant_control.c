@@ -21,16 +21,42 @@
 
 #include "grbl.h"
 
-#ifdef NUCLEO
+#ifdef NUCLEO_F401
 
 void coolant_init(void)
-{}
+{
+  rcc_periph_clock_enable(RCC_GPIOC);
+  SET_COOLANT_FLOOD_DDR;
+#ifdef ENABLE_M7
+  SET_COOLANT_MIST_DDR;
+#endif
+  coolant_stop();
+}
 void coolant_stop(void)
-{}
+{
+  UNSET_COOLANT_FLOOD_BIT;
+#ifdef ENABLE_M7
+  UNSET_COOLANT_MIST_BIT;
+#endif
+}
 void coolant_set_state(uint8_t mode)
-{}
-void coolant_run(uint8_t mode)
-{}
+{
+  if (mode == COOLANT_FLOOD_ENABLE)
+  {
+    SET_COOLANT_FLOOD_BIT;
+
+#ifdef ENABLE_M7
+  }
+  else if (mode == COOLANT_MIST_ENABLE)
+  {
+    SET_COOLANT_MIST_BIT;
+#endif
+  }
+  else
+  {
+    coolant_stop();
+  }
+}
 
 #else
 void coolant_init()
@@ -67,6 +93,7 @@ void coolant_set_state(uint8_t mode)
   }
 }
 
+#endif //NUCLEO_F401
 
 void coolant_run(uint8_t mode)
 {
@@ -74,4 +101,3 @@ void coolant_run(uint8_t mode)
   protocol_buffer_synchronize(); // Ensure coolant turns on when specified in program.  
   coolant_set_state(mode);
 }
-#endif //NUCLEO

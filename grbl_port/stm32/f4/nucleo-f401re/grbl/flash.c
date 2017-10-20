@@ -22,6 +22,7 @@
 #include <grbl.h>
 
 #define FLASH_WAIT_FOR_LAST_OP while((FLASH_SR & FLASH_SR_BSY) == FLASH_SR_BSY);
+#define FLASH_CR_LOCK_OPERATION  FLASH_CR |= FLASH_CR_LOCK;
 
 static void flash_unlock_private(void)
 {
@@ -32,11 +33,6 @@ static void flash_unlock_private(void)
 	FLASH_KEYR = FLASH_KEYR_KEY1;
 	FLASH_KEYR = FLASH_KEYR_KEY2;
 };
-
-static void flash_lock_private(void)
-{
-	FLASH_CR |= FLASH_CR_LOCK;
-}
 
 static void flash_program_byte_private(uint32_t address, uint8_t data)
 {
@@ -153,7 +149,7 @@ void flash_put_char( unsigned int addr, unsigned char new_value)
 
     flash_program_byte_private((uint32_t) addr, (uint8_t)new_value);
     
-    flash_lock_private();
+    FLASH_CR_LOCK_OPERATION
     //__enable_irq(); // Restore interrupt flag state.
 }
 
@@ -187,21 +183,21 @@ void update_main_sector_status(uint32_t updated_status)
 {
     flash_unlock_private();
     flash_program_word_private(((uint32_t)EFLASH_MAIN_SECTOR_STATUS), updated_status);
-    flash_lock_private();
+    FLASH_CR_LOCK_OPERATION
 }
 
 void delete_main_sector(void)
 {
     flash_unlock_private();
     flash_erase_sector_private(((uint8_t)MAIN_SECTOR), ((uint32_t)0));
-    flash_lock_private();
+    FLASH_CR_LOCK_OPERATION
 }
 
 void delete_copy_sector(void)
 {
     flash_unlock_private();
     flash_erase_sector_private(((uint8_t)COPY_SECTOR), ((uint32_t)0));
-    flash_lock_private();
+    FLASH_CR_LOCK_OPERATION
 }
 
 void copy_from_main_to_copy(uint32_t start_address_offset, uint32_t end_address_offset)
@@ -217,7 +213,7 @@ void copy_from_main_to_copy(uint32_t start_address_offset, uint32_t end_address_
         flash_program_word_private((start_address_offset+(i<<2)+EFLASH_COPY_BASE_ADDRESS), value);
     }
 
-    flash_lock_private();
+    FLASH_CR_LOCK_OPERATION
 }
 
 void restore_main_sector()
@@ -232,7 +228,7 @@ void restore_main_sector()
         value = *(address+i); // new EFLASH value.
         flash_program_word_private(((i<<2)+destination), value);
     }
-    flash_lock_private();
+    FLASH_CR_LOCK_OPERATION
 }
 
 

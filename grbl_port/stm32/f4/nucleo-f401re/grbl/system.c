@@ -30,7 +30,7 @@ volatile uint8_t sys_rt_exec_alarm;  // Global realtime executor bitflag variabl
 
 void system_init()
 {
-#ifdef NUCLEO
+#ifdef NUCLEO_F401
 	/* Enable GPIOA,GPIOB, GPIOC and SYSCFG clocks. */
 	rcc_periph_clock_enable(RCC_GPIOA);
     rcc_periph_clock_enable(RCC_GPIOB);
@@ -83,7 +83,7 @@ void system_init()
 #endif
 }
 
-#ifdef NUCLEO
+#ifdef NUCLEO_F401
 void exti1_isr()
 {
 	exti_reset_request(FEED_HOLD_CONTROL_INT_vect);
@@ -355,10 +355,10 @@ float system_convert_axis_steps_to_mpos(int32_t *steps, uint8_t idx)
 {
   float pos;
   #ifdef COREXY
-    if (idx==A_MOTOR) {
-      pos = 0.5*((steps[A_MOTOR] + steps[B_MOTOR])/settings.steps_per_mm[idx]);
-    } else if (idx==B_MOTOR) {
-      pos = 0.5*((steps[A_MOTOR] - steps[B_MOTOR])/settings.steps_per_mm[idx]);
+    if (idx==X_AXIS) { 
+      pos = (float)system_convert_corexy_to_x_axis_steps(steps) / settings.steps_per_mm[A_MOTOR];
+    } else if (idx==Y_AXIS) {
+      pos = (float)system_convert_corexy_to_y_axis_steps(steps) / settings.steps_per_mm[B_MOTOR];
     } else {
       pos = steps[idx]/settings.steps_per_mm[idx];
     }
@@ -377,4 +377,17 @@ void system_convert_array_steps_to_mpos(float *position, int32_t *steps)
   }
   return;
 }
+
+
+// CoreXY calculation only. Returns x or y-axis "steps" based on CoreXY motor steps.
+#ifdef COREXY
+  int32_t system_convert_corexy_to_x_axis_steps(int32_t *steps)
+  {
+    return( (steps[A_MOTOR] + steps[B_MOTOR])/2 );
+  }
+  int32_t system_convert_corexy_to_y_axis_steps(int32_t *steps)
+  {
+    return( (steps[A_MOTOR] - steps[B_MOTOR])/2 );
+  }
+#endif
 

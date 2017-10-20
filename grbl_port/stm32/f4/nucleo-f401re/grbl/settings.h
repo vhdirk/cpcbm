@@ -54,7 +54,8 @@
 #define SETTINGS_RESTORE_STARTUP_LINES bit(2)
 #define SETTINGS_RESTORE_BUILD_INFO bit(3)
 
-#ifdef NUCLEO
+//TODO: move these in another point
+#ifdef NUCLEO_F401
 typedef enum main_sectore_restore_states_e
 {
 	MAIN_SECTOR_COPIED   = 0x000000FFU,

@@ -247,15 +247,15 @@
 // Define flood and mist coolant enable output pins.
 #define COOLANT_FLOOD_DDR               GPIOC_MODER
 #define COOLANT_FLOOD_PORT              GPIOC_ODR
-#define COOLANT_FLOOD_BIT               1 // NucleoF401 Digital Pin 2
-#define COOLANT_FLOOD_MASK_DDR          (1<<(COOLANT_FLOOD_BIT*2)) // All (step bits*2) because the direction/mode has 2 bits
+#define COOLANT_FLOOD_BIT               1 // NucleoF401 Digital Pin 1
+#define COOLANT_FLOOD_DDR_MASK          (1<<(COOLANT_FLOOD_BIT*2)) // All (step bits*2) because the direction/mode has 2 bits
 #define COOLANT_FLOOD_DDR_RESET_MASK    (0x3<<(COOLANT_FLOOD_BIT*2))
 #define COOLANT_FLOOD_MASK              (1<<COOLANT_FLOOD_BIT)     // COOLANT_FLOOD mask bit
 #ifdef ENABLE_M7 // Mist coolant disabled by default. See config.h to enable/disable.
 #define COOLANT_MIST_DDR               GPIOC_MODER
 #define COOLANT_MIST_PORT              GPIOC_ODR
-#define COOLANT_MIST_BIT               2 // NucleoF401 Digital Pin 1
-#define COOLANT_MIST_MASK_DDR          (1<<(COOLANT_MIST_BIT*2)) // All (step bits*2) because the direction/mode has 2 bits
+#define COOLANT_MIST_BIT               2 // NucleoF401 Digital Pin 2
+#define COOLANT_MIST_DDR_MASK          (1<<(COOLANT_MIST_BIT*2)) // All (step bits*2) because the direction/mode has 2 bits
 #define COOLANT_MIST_DDR_RESET_MASK    (0x3<<(COOLANT_MIST_BIT*2))
 #define COOLANT_MIST_MASK              (1<<COOLANT_MIST_BIT)     // COOLANT_MIST mask bit
 #endif
@@ -421,7 +421,7 @@ do{ \
 #define SET_COOLANT_FLOOD_DDR \
   do { \
     COOLANT_FLOOD_DDR &= ~COOLANT_FLOOD_DDR_RESET_MASK; \
-    COOLANT_FLOOD_DDR |= COOLANT_FLOOD_DDR; \
+    COOLANT_FLOOD_DDR |= COOLANT_FLOOD_DDR_MASK; \
   } while (0)
 
 #define SET_COOLANT_FLOOD_BIT \
@@ -438,7 +438,7 @@ do{ \
 #define SET_COOLANT_MIST_DDR \
   do { \
     COOLANT_MIST_DDR &= ~COOLANT_MIST_DDR_RESET_MASK; \
-    COOLANT_MIST_DDR |= COOLANT_MIST_DDR; \
+    COOLANT_MIST_DDR |= COOLANT_MIST_DDR_MASK; \
   } while (0)
 
 

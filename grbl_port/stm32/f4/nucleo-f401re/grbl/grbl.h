@@ -24,11 +24,11 @@
 
 // Grbl versioning system
 #define GRBL_VERSION "0.9j"
-#define GRBL_VERSION_BUILD "20160317"
+#define GRBL_VERSION_BUILD "20160726"
 
 #include "config.h"
 // Define standard libraries used by Grbl.
-#ifdef NUCLEO
+#ifdef NUCLEO_F401
 #include <libopencm3/cm3/nvic.h>
 #include <libopencmsis/core_cm3.h>
 #else
@@ -52,7 +52,7 @@
 #include "defaults.h"
 #include "cpu_map.h"
 #include "coolant_control.h"
-#ifdef NUCLEO
+#ifdef NUCLEO_F401
 #include "flash.h"
 #else
 #include "eeprom.h"
@@ -68,7 +68,5 @@
 #include "serial.h"
 #include "spindle_control.h"
 #include "stepper.h"
-
-
 
 #endif
