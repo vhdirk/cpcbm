@@ -41,8 +41,8 @@ SECTIONS
 	.ramcode : {
 		    _ramcode = .;
 	        *(.vectors)	/* Vector table */
-			flash.o
-			serial.o
+			*flash.o
+			*serial.o
 			_eramcode = .;
 	}  >ram_txt AT >rom
 	_ramcode_loadaddr = LOADADDR(.ramcode);
@@ -80,6 +80,7 @@ SECTIONS
 	_data_loadaddr = LOADADDR(.data);
 
 	.bss : {
+		_bss = .;
 		*(.bss*)	/* Read-write zero initialized data */
 		*(COMMON)
 		. = ALIGN(4);

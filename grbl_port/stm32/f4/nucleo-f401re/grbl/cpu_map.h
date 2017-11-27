@@ -26,19 +26,17 @@
 
 // NOTE: With new processors, only add the define name and filename to use.
 
-#ifndef cpu_map_h
-#define cpu_map_h
+#ifndef CPU_MAP_H
+#define CPU_MAP_H
 
 
 #ifdef CPU_MAP_ATMEGA328P // (Arduino Uno) Officially supported by Grbl.
   #include "cpu_map/cpu_map_atmega328p.h"
-#endif
 
-#ifdef CPU_MAP_ATMEGA2560 // (Arduino Mega 2560) Working @EliteEng
+#elif defined(CPU_MAP_ATMEGA2560) // (Arduino Mega 2560) Working @EliteEng
   #include "cpu_map/cpu_map_atmega2560.h"
-#endif
 
-#ifdef NUCLEO_F401 // (NUCLEO_F401)
+#elif defined NUCLEO_F401 // (NUCLEO_F401)
   #include "cpu_map/cpu_map_nucleof401.h"
 #endif
 /* 
@@ -49,4 +47,4 @@
 #endif
 */
 
-#endif
+#endif /* CPU_MAP_H */

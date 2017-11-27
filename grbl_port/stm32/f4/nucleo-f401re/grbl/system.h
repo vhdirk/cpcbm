@@ -19,8 +19,8 @@
   along with Grbl_port_opencm3.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef system_h
-#define system_h
+#ifndef SYSTEM_H
+#define SYSTEM_H
 
 #include "grbl.h"
 
@@ -83,7 +83,11 @@ typedef struct {
 
   int32_t probe_position[N_AXIS]; // Last probe position in machine coordinates and steps.
   uint8_t probe_succeeded;        // Tracks if last probing cycle was successful.
+#ifdef NUCLEO_F401
+  uint16_t homing_axis_lock;       // Locks axes when limits engage. Used as an axis motion mask in the stepper ISR.
+#else
   uint8_t homing_axis_lock;       // Locks axes when limits engage. Used as an axis motion mask in the stepper ISR.
+#endif
 } system_t;
 extern system_t sys;
 
@@ -111,4 +115,4 @@ void system_convert_array_steps_to_mpos(float *position, int32_t *steps);
   int32_t system_convert_corexy_to_y_axis_steps(int32_t *steps);
 #endif
 
-#endif
+#endif /* SYSTEM_H */

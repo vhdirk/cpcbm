@@ -119,9 +119,9 @@ void spindle_set_state(uint8_t state, float rpm)
 
     #ifdef VARIABLE_SPINDLE
         /* PWM settings done in the init, shall not need to be repeated. */
-        timer_set_prescaler(TIM3, (8*PSC_MUL_FACTOR)-1);// set to 1/8 Prescaler
+        timer_set_prescaler(TIM3, (128*PSC_MUL_FACTOR)-1);// set to 1/8 Prescaler
         timer_set_oc_value(TIM3, TIM_OC1, 0xFFFF);// set the top 16bit value
-        timer_set_period(TIM3, 0X00FF);
+        timer_set_period(TIM3, 0X09FF);
         
         uint16_t current_pwm;
 

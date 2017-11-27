@@ -89,9 +89,11 @@ void limits_init()
   }
   
   #ifdef ENABLE_SOFTWARE_DEBOUNCE
+  #ifndef NUCLEO_F401
     MCUSR &= ~(1<<WDRF);
     WDTCSR |= (1<<WDCE) | (1<<WDE);
     WDTCSR = (1<<WDP0); // Set time-out at ~32msec.
+  #endif
   #endif
 #endif //ifdef NUCLEO_F401
 }
@@ -102,6 +104,7 @@ void limits_disable()
 {
 #ifdef NUCLEO_F401
 	nvic_disable_irq(LIMIT_INT);// Disable Limits pins Interrupt
+	nvic_disable_irq(LIMIT_INT_Z);// Disable Limits pins Interrupt
 #else
   LIMIT_PCMSK &= ~LIMIT_MASK;  // Disable specific pins of the Pin Change Interrupt
   PCICR &= ~(1 << LIMIT_INT);  // Disable Pin Change Interrupt
@@ -212,10 +215,63 @@ void exti9_5_isr()
 //TODO: adjust software debounce isr routine for nucleo 
 #else // OPTIONAL: Software debounce limit pin routine.
   // Upon limit pin change, enable watchdog timer to create a short delay. 
+#ifdef NUCLEO_F401
+void exti0_isr()
+{
+	exti_reset_request(LIMIT_INT_vect_Z);
+	nvic_clear_pending_irq(NVIC_EXTI0_IRQ);
+
+	/* Enable TIM5 clock. */
+	rcc_periph_clock_enable(RCC_TIM5);
+	timer_reset(TIM5);
+	/* Continous mode. */
+	timer_continuous_mode(TIM5);
+	timer_set_mode(TIM5, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+    /* ARR reload enable. */
+    timer_enable_preload(TIM5);
+    timer_set_prescaler(TIM5, (256*PSC_MUL_FACTOR)-1);// set to 1/8 Prescaler
+	timer_set_period(TIM5, 0X09FF);
+
+    /* Enable TIM5 Stepper Driver Interrupt. */
+    timer_enable_irq(TIM5, TIM_DIER_UIE); /** Capture/compare 1 interrupt enable */
+	nvic_enable_irq(NVIC_TIM5_IRQ);
+    timer_enable_counter(TIM5); /* Counter enable. */
+}
+void exti9_5_isr()
+{
+	/* Clear interrupt request */
+	exti_reset_request(LIMIT_INT_vect);
+	nvic_clear_pending_irq(NVIC_EXTI9_5_IRQ);
+
+	/* Enable TIM5 clock. */
+	rcc_periph_clock_enable(RCC_TIM5);
+	timer_reset(TIM5);
+	/* Continous mode. */
+	timer_continuous_mode(TIM5);
+	timer_set_mode(TIM5, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+    /* ARR reload enable. */
+    timer_enable_preload(TIM5);
+    timer_set_prescaler(TIM5, (256*PSC_MUL_FACTOR)-1);// set to 1/8 Prescaler
+	timer_set_period(TIM5, 0X09FF);
+
+    /* Enable TIM5 Stepper Driver Interrupt. */
+    timer_enable_irq(TIM5, TIM_DIER_UIE); /** Capture/compare 1 interrupt enable */
+	nvic_enable_irq(NVIC_TIM5_IRQ);
+    timer_enable_counter(TIM5); /* Counter enable. */
+}
+
+void tim5_isr()
+{
+	timer_disable_counter(TIM5);
+	nvic_clear_pending_irq(NVIC_TIM5_IRQ);
+	nvic_disable_irq(NVIC_TIM5_IRQ);
+
+#else
   ISR(LIMIT_INT_vect) { if (!(WDTCSR & (1<<WDIE))) { WDTCSR |= (1<<WDIE); } }
   ISR(WDT_vect) // Watchdog timer ISR
   {
-    WDTCSR &= ~(1<<WDIE); // Disable watchdog timer. 
+    WDTCSR &= ~(1<<WDIE); // Disable watchdog timer.
+#endif
     if (sys.state != STATE_ALARM) {  // Ignore if already in alarm state. 
       if (!(sys_rt_exec_alarm)) {
         // Check limit pin state. 
@@ -242,7 +298,11 @@ void limits_go_home(uint8_t cycle_mask)
 
   // Initialize
   uint8_t n_cycle = (2*N_HOMING_LOCATE_CYCLE+1);
+#ifdef NUCLEO_F401
+  uint16_t step_pin[N_AXIS];
+#else
   uint8_t step_pin[N_AXIS];
+#endif
   float target[N_AXIS];
   float max_travel = 0.0;
   uint8_t idx;
@@ -264,7 +324,12 @@ void limits_go_home(uint8_t cycle_mask)
   bool approach = true;
   float homing_rate = settings.homing_seek_rate;
 
-  uint8_t limit_state, axislock, n_active_axis;
+  uint8_t limit_state, n_active_axis;
+#ifdef NUCLEO_F401
+  uint16_t axislock;
+#else
+  uint8_t axislock;
+#endif
   do {
 
     system_convert_array_steps_to_mpos(target,sys.position);

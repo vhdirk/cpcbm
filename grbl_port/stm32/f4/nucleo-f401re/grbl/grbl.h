@@ -19,14 +19,15 @@
   along with Grbl_port_opencm3.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef grbl_h
-#define grbl_h
+#ifndef GRBL_H
+#define GRBL_H
 
 // Grbl versioning system
 #define GRBL_VERSION "0.9j"
 #define GRBL_VERSION_BUILD "20160726"
 
 #include "config.h"
+#include "cpu_map.h"
 // Define standard libraries used by Grbl.
 #ifdef NUCLEO_F401
 #include <libopencm3/cm3/nvic.h>
@@ -50,13 +51,8 @@
 #include "settings.h"
 #include "system.h"
 #include "defaults.h"
-#include "cpu_map.h"
 #include "coolant_control.h"
-#ifdef NUCLEO_F401
-#include "flash.h"
-#else
-#include "eeprom.h"
-#endif
+
 #include "gcode.h"
 #include "limits.h"
 #include "motion_control.h"
@@ -69,4 +65,4 @@
 #include "spindle_control.h"
 #include "stepper.h"
 
-#endif
+#endif /* GRBL_H */
