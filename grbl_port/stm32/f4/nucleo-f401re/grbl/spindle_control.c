@@ -28,6 +28,9 @@
 
 void spindle_init()
 {    
+  //prescaler to get 1 us granularity
+  uint32_t prescaler = (rcc_apb1_frequency / 1000000)-1;
+
   // Configure variable spindle PWM and enable pin, if requried. On the Uno, PWM and enable are
   // combined unless configured otherwise.
   #ifdef VARIABLE_SPINDLE
@@ -68,6 +71,7 @@ void spindle_init()
 	timer_enable_oc_preload(TIM3, TIM_OC1);           // Sets OCxPE in TIMx_CCMRx
 	timer_set_oc_polarity_high(TIM3, TIM_OC1);        // set desired polarity in TIMx_CCER
 	timer_enable_oc_output(TIM3, TIM_OC1);
+    timer_set_prescaler(TIM3, prescaler);// set to get 1 us granularity
 
 
 	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
@@ -102,57 +106,62 @@ void spindle_stop()
 
 void spindle_set_state(uint8_t state, float rpm)
 {
+  uint16_t current_pwm;
+  uint32_t spindle_pwm_range;
+
   // Halt or set spindle direction and rpm. 
-  if (state == SPINDLE_DISABLE) {
-
+  if(state == SPINDLE_DISABLE)
+  {
     spindle_stop();
+  }
+  else
+  {
+#ifndef USE_SPINDLE_DIR_AS_ENABLE_PIN
+    if(state == SPINDLE_ENABLE_CW)
+    {
+      UNSET_SPINDLE_DIRECTION_BIT;
+    }
+    else
+    {
+      SET_SPINDLE_DIRECTION_BIT;
+    }
+#endif
 
-  } else {
+#ifdef VARIABLE_SPINDLE
+    timer_disable_counter(TIM3);
+    timer_set_counter(TIM3,0);
 
-    #ifndef USE_SPINDLE_DIR_AS_ENABLE_PIN
-      if (state == SPINDLE_ENABLE_CW) {
-        UNSET_SPINDLE_DIRECTION_BIT;
-      } else {
-        SET_SPINDLE_DIRECTION_BIT;
-      }
-    #endif
+    /* PWM settings done in the init, shall not need to be repeated. */
+    timer_set_oc_value(TIM3, TIM_OC1, 0xFFFF);// set the top 16bit value
+    timer_set_period(TIM3, settings.spindle_pwm_period);
 
-    #ifdef VARIABLE_SPINDLE
-        /* PWM settings done in the init, shall not need to be repeated. */
-        timer_set_prescaler(TIM3, (128*PSC_MUL_FACTOR)-1);// set to 1/8 Prescaler
-        timer_set_oc_value(TIM3, TIM_OC1, 0xFFFF);// set the top 16bit value
-        timer_set_period(TIM3, 0X09FF);
-        
-        uint16_t current_pwm;
 
-      if (rpm <= 0.0) { spindle_stop(); } // RPM should never be negative, but check anyway.
-      else {
-        #define SPINDLE_RPM_RANGE (SPINDLE_MAX_RPM-SPINDLE_MIN_RPM)
-        if ( rpm < SPINDLE_MIN_RPM ) { rpm = 0; } 
-        else { 
-          rpm -= SPINDLE_MIN_RPM; 
-          if ( rpm > SPINDLE_RPM_RANGE ) { rpm = SPINDLE_RPM_RANGE; } // Prevent integer overflow
-        }
-        current_pwm = floor( rpm*(PWM_MAX_VALUE/SPINDLE_RPM_RANGE) + 0.5);
-        #ifdef MINIMUM_SPINDLE_PWM
-          if (current_pwm < MINIMUM_SPINDLE_PWM) { current_pwm = MINIMUM_SPINDLE_PWM; }
-        #endif
-        timer_set_oc_value(TIM3, TIM_OC1, current_pwm);// Set PWM pin output
-        timer_enable_oc_output(TIM3, TIM_OC1);
-        /* Generate update event to update shadow registers */
-    	timer_generate_event(TIM2, TIM_EGR_UG);
-        /* Counter enable. */
-        timer_enable_counter(TIM3); 
+    spindle_pwm_range = (settings.spindle_pwm_max_time_on-settings.spindle_pwm_min_time_on);
+
+    if (rpm <= 0.0 || spindle_pwm_range <= 0.0) { spindle_stop(); } // RPM should never be negative, but check anyway.
+    else
+    {
+      if ( rpm < SPINDLE_MIN_RPM ) { rpm = 0; }
+      else if ( rpm > SPINDLE_MAX_RPM ) { rpm = SPINDLE_MAX_RPM; }
+
+      current_pwm = floor( rpm*(spindle_pwm_range/(SPINDLE_MAX_RPM - SPINDLE_MIN_RPM)) + settings.spindle_pwm_min_time_on + 0.5);
+
+      timer_set_oc_value(TIM3, TIM_OC1, current_pwm);// Set PWM pin output
+      timer_enable_oc_output(TIM3, TIM_OC1);
+      /* Generate update event to update shadow registers */
+      timer_generate_event(TIM2, TIM_EGR_UG);
+      /* Counter enable. */
+      timer_enable_counter(TIM3);
     
-        // if spindle enable and PWM are shared, unless otherwise specified.
-        #if defined(USE_SPINDLE_DIR_AS_ENABLE_PIN) 
-          #ifdef INVERT_SPINDLE_ENABLE_PIN
-            UNSET_SPINDLE_ENABLE;  // Set pin to high
-          #else
-            SET_SPINDLE_ENABLE;  // Set pin to high
-          #endif
+      // if spindle enable and PWM are shared, unless otherwise specified.
+      #if defined(USE_SPINDLE_DIR_AS_ENABLE_PIN)
+        #ifdef INVERT_SPINDLE_ENABLE_PIN
+          UNSET_SPINDLE_ENABLE;  // Set pin to high
+        #else
+          SET_SPINDLE_ENABLE;  // Set pin to high
         #endif
-      }
+      #endif
+    }
       
     #else
       // NOTE: Without variable spindle, the enable bit should just turn on or off, regardless
@@ -163,7 +172,6 @@ void spindle_set_state(uint8_t state, float rpm)
         SET_SPINDLE_ENABLE;  // Set pin to high
       #endif
     #endif
-
   }
 }
 
