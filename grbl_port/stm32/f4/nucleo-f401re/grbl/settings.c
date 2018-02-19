@@ -191,9 +191,9 @@ void settings_restore(uint8_t restore_flag) {
     settings.homing_pulloff = DEFAULT_HOMING_PULLOFF;
 
     //TODO: define default values elsewhere
-    settings.spindle_pwm_period = 1000;
-    settings.spindle_pwm_max_time_on = 1000;
-    settings.spindle_pwm_min_time_on = 0;
+    settings.spindle_pwm_period = DEFAULT_SPINDLE_PWM_PERIOD;
+    settings.spindle_pwm_max_time_on = DEFAULT_SPINDLE_PWM_MAX_TIME_ON;
+    settings.spindle_pwm_min_time_on = DEFAULT_SPINDLE_PWM_MIN_TIME_ON;
 
     settings.flags = 0;
     if (DEFAULT_REPORT_INCHES) { settings.flags |= BITFLAG_REPORT_INCHES; }
