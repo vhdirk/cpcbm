@@ -36,7 +36,7 @@
 
 void limits_init() 
 {
-#ifdef NUCLEO_F401
+#ifdef NUCLEO
     rcc_periph_clock_enable(RCC_GPIOB);
     rcc_periph_clock_enable(RCC_GPIOC);
     rcc_periph_clock_enable(RCC_SYSCFG);
@@ -89,7 +89,7 @@ void limits_init()
   }
   
   #ifdef ENABLE_SOFTWARE_DEBOUNCE
-  #ifndef NUCLEO_F401
+  #ifndef NUCLEO
     MCUSR &= ~(1<<WDRF);
     WDTCSR |= (1<<WDCE) | (1<<WDE);
     WDTCSR = (1<<WDP0); // Set time-out at ~32msec.
@@ -102,7 +102,7 @@ void limits_init()
 // Disables hard limits.
 void limits_disable()
 {
-#ifdef NUCLEO_F401
+#ifdef NUCLEO
 	nvic_disable_irq(LIMIT_INT);// Disable Limits pins Interrupt
 	nvic_disable_irq(LIMIT_INT_Z);// Disable Limits pins Interrupt
 #else
@@ -118,7 +118,7 @@ void limits_disable()
 uint8_t limits_get_state()
 {
   uint8_t limit_state = 0;
-#ifdef NUCLEO_F401
+#ifdef NUCLEO
   uint8_t pin = GET_LIMIT_PIN;
 #else
   uint8_t pin = (LIMIT_PIN & LIMIT_MASK);
@@ -149,7 +149,7 @@ uint8_t limits_get_state()
 // special pinout for an e-stop, but it is generally recommended to just directly connect
 // your e-stop switch to the Arduino reset pin, since it is the most correct way to do this.
 #ifndef ENABLE_SOFTWARE_DEBOUNCE
-#ifdef NUCLEO_F401
+#ifdef NUCLEO
 void exti0_isr()
 {
 	exti_reset_request(LIMIT_INT_vect_Z);
@@ -214,8 +214,8 @@ void exti9_5_isr()
   }  
 //TODO: adjust software debounce isr routine for nucleo 
 #else // OPTIONAL: Software debounce limit pin routine.
-  // Upon limit pin change, enable watchdog timer to create a short delay. 
-#ifdef NUCLEO_F401
+  // Upon limit pin change, enable watchdog timer to create a short delay.
+#ifdef NUCLEO
 void exti0_isr()
 {
 	exti_reset_request(LIMIT_INT_vect_Z);
@@ -298,7 +298,7 @@ void limits_go_home(uint8_t cycle_mask)
 
   // Initialize
   uint8_t n_cycle = (2*N_HOMING_LOCATE_CYCLE+1);
-#ifdef NUCLEO_F401
+#ifdef NUCLEO
   uint16_t step_pin[N_AXIS];
 #else
   uint8_t step_pin[N_AXIS];
@@ -325,7 +325,7 @@ void limits_go_home(uint8_t cycle_mask)
   float homing_rate = settings.homing_seek_rate;
 
   uint8_t limit_state, n_active_axis;
-#ifdef NUCLEO_F401
+#ifdef NUCLEO
   uint16_t axislock;
 #else
   uint8_t axislock;
@@ -419,7 +419,7 @@ void limits_go_home(uint8_t cycle_mask)
           break;
         } 
       }
-#ifdef NUCLEO_F401
+#ifdef NUCLEO
     } while ((STEP_MASK_X | STEP_MASK_YZ) & axislock);
 #else
     } while (STEP_MASK & axislock);

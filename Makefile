@@ -1,20 +1,20 @@
 ##
-## This file is part of the libopencm3 project.
+## This file is part of the grbl_port_opencm3 project.
 ##
-## Copyright (C) 2009 Uwe Hermann <uwe@hermann-uwe.de>
+## Copyright (C) 2017 Angelo Di Chello
 ##
-## This library is free software: you can redistribute it and/or modify
-## it under the terms of the GNU Lesser General Public License as published by
+## Grbl_port_opencm3 is free software: you can redistribute it and/or modify
+## it under the terms of the GNU General Public License as published by
 ## the Free Software Foundation, either version 3 of the License, or
 ## (at your option) any later version.
 ##
-## This library is distributed in the hope that it will be useful,
+## Grbl_port_opencm3 is distributed in the hope that it will be useful,
 ## but WITHOUT ANY WARRANTY; without even the implied warranty of
 ## MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-## GNU Lesser General Public License for more details.
+## GNU General Public License for more details.
 ##
-## You should have received a copy of the GNU Lesser General Public License
-## along with this library.  If not, see <http://www.gnu.org/licenses/>.
+## You should have received a copy of the GNU General Public License
+## along with Grbl_port_opencm3.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
 PREFIX		?= arm-none-eabi
@@ -40,6 +40,7 @@ GRBL_PORT_RULES = elf
 
 all: build
 
+grbl: GRBL_PORT_RULES += bin
 bin: GRBL_PORT_RULES += bin
 hex: GRBL_PORT_RULES += hex
 srec: GRBL_PORT_RULES += srec
@@ -67,7 +68,7 @@ lib:
 		fi
 	$(Q)$(MAKE) -C $(OPENCM3_DIR)
 
-GRBL_PORT_DIRS:=$(sort $(dir $(wildcard $(addsuffix /*/*/Makefile,$(addprefix grbl_port/,$(TARGETS))))))
+GRBL_PORT_DIRS:=$(sort $(dir $(wildcard $(addsuffix /*/Makefile,$(addprefix grbl_port/,$(TARGETS))))))
 $(GRBL_PORT_DIRS): lib
 	@printf "  BUILD   $@\n";
 	$(Q)$(MAKE) --directory=$@ OPENCM3_DIR=$(OPENCM3_DIR) $(GRBL_PORT_RULES)
@@ -75,12 +76,22 @@ $(GRBL_PORT_DIRS): lib
 grbl_port: $(GRBL_PORT_DIRS)
 	$(Q)true
 
+# Compile executables only, and assumes lib have been compiled
+grbl:
+	$(Q)$(foreach x,$(GRBL_PORT_DIRS), \
+	printf "  BUILD   $(x)\n"; \
+	$(MAKE) --directory=$(x) OPENCM3_DIR=$(OPENCM3_DIR) $(GRBL_PORT_RULES);	)
+	
+
 clean: $(GRBL_PORT_DIRS:=.clean) styleclean
 	$(Q)$(MAKE) -C libopencm3 clean
 
 stylecheck: $(GRBL_PORT_DIRS:=.stylecheck)
 styleclean: $(GRBL_PORT_DIRS:=.styleclean)
 
+# Clean executables directories only
+clean_grbl: $(GRBL_PORT_DIRS:=.clean) 
+	$(Q)true
 
 %.clean:
 	$(Q)if [ -d $* ]; then \
@@ -95,6 +106,6 @@ styleclean: $(GRBL_PORT_DIRS:=.styleclean)
 	$(Q)$(MAKE) -C $* stylecheck OPENCM3_DIR=$(OPENCM3_DIR)
 
 
-.PHONY: build lib grbl_port $(GRBL_PORT_DIRS) install clean stylecheck styleclean \
+.PHONY: build lib grbl_port grbl clean_grbl install clean stylecheck styleclean \
         bin hex srec list images
 

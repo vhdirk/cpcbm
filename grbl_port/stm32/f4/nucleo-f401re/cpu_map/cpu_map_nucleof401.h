@@ -41,7 +41,7 @@
 
 #define GRBL_PLATFORM "NucleoF401"
 
-
+#define NUCLEO // Nucleo
 #define USE_RX_DMA
 
 #define MAIN_SECTOR 6
