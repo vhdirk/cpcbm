@@ -138,7 +138,7 @@ void spindle_set_state(uint8_t state, float rpm)
 
     spindle_pwm_range = (settings.spindle_pwm_max_time_on-settings.spindle_pwm_min_time_on);
 
-    if (rpm <= 0.0 || spindle_pwm_range <= 0.0) { spindle_stop(); } // RPM should never be negative, but check anyway.
+    if (rpm < 0.0 || spindle_pwm_range <= 0.0) { spindle_stop(); } // RPM should never be negative, but check anyway.
     else
     {
         if ( rpm < SPINDLE_MIN_RPM ) { rpm = 0; } 
