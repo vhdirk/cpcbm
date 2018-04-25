@@ -128,7 +128,7 @@
 #define LIMIT_Z_MASK              (1<<Z_LIMIT_BIT) // Y limit bits
 
 #define LIMIT_MASK                (LIMIT_X_MASK | LIMIT_Y_MASK | LIMIT_Z_MASK)
-#define INVERT_LIMIT_PIN_MASK     (LIMIT_MASK)
+//#define INVERT_LIMIT_PIN_MASK     (LIMIT_MASK)
 
 /* Interrupt defines for LIMIT PINS */
 #define LIMIT_INT                 NVIC_EXTI9_5_IRQ  // Pin change interrupt enable pin
