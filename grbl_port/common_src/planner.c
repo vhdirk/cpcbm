@@ -284,8 +284,8 @@ uint8_t plan_check_full_buffer()
 
     target_steps[A_MOTOR] = lround(target[A_MOTOR]*settings.steps_per_mm[A_MOTOR]);
     target_steps[B_MOTOR] = lround(target[B_MOTOR]*settings.steps_per_mm[B_MOTOR]);
-    block->steps[A_MOTOR] = labs((target_steps[X_AXIS]-pl.position[X_AXIS]) + (target_steps[Y_AXIS]-pl.position[Y_AXIS]));
-    block->steps[B_MOTOR] = labs((target_steps[X_AXIS]-pl.position[X_AXIS]) - (target_steps[Y_AXIS]-pl.position[Y_AXIS]));
+    block->steps[A_MOTOR] = labs(corexy_dir_invert_X*(target_steps[X_AXIS]-pl.position[X_AXIS]) + corexy_dir_invert_Y * (target_steps[Y_AXIS]-pl.position[Y_AXIS]));
+    block->steps[B_MOTOR] = labs(corexy_dir_invert_X*(target_steps[X_AXIS]-pl.position[X_AXIS]) - corexy_dir_invert_Y * (target_steps[Y_AXIS]-pl.position[Y_AXIS]));
   #endif
 
   for (idx=0; idx<N_AXIS; idx++) {
