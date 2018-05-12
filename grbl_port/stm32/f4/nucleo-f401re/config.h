@@ -81,8 +81,8 @@
 //#define HOMING_CYCLE_1 ((1<<X_AXIS)|(1<<Y_AXIS))  // OPTIONAL: Then move X,Y at the same time.
 
 #define HOMING_CYCLE_0 (1<<Z_AXIS)
-#define HOMING_CYCLE_1 (1<<Y_AXIS)                // COREXY REQUIRED: First move x.
-#define HOMING_CYCLE_2 (1<<X_AXIS)                // COREXY REQUIRED: Then move Y.
+#define HOMING_CYCLE_1 (1<<Y_AXIS)                // COREXY REQUIRED: First move Y.
+#define HOMING_CYCLE_2 (1<<X_AXIS)                // COREXY REQUIRED: Then move X.
 
 //#define HOMING_CYCLE_0 (1<<X_AXIS)                // COREXY REQUIRED: First move x.
 //#define HOMING_CYCLE_1 (1<<Y_AXIS)                // COREXY REQUIRED: Then move Y.

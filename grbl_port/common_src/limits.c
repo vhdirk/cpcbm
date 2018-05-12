@@ -130,7 +130,13 @@ uint8_t limits_get_state()
   if (pin) {  
     uint8_t idx;
     for (idx=0; idx<N_AXIS; idx++) {
-      if (pin & get_limit_pin_mask(idx)) { limit_state |= (1 << idx); }
+      if (pin & get_limit_pin_mask(idx))
+      {
+    	  limit_state |= (1 << idx);
+#ifdef TEST_NUCLEO_EXTI_PINS
+          test_led_toggle();
+#endif
+      }
     }
   }
   return(limit_state);
@@ -216,6 +222,25 @@ void exti9_5_isr()
 #else // OPTIONAL: Software debounce limit pin routine.
   // Upon limit pin change, enable watchdog timer to create a short delay.
 #ifdef NUCLEO
+static void enable_debounce_timer(void)
+{
+	/* Enable TIM5 clock. */
+	rcc_periph_clock_enable(RCC_TIM5);
+	timer_reset(TIM5);
+	/* Continous mode. */
+	timer_continuous_mode(TIM5);
+	timer_set_mode(TIM5, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+    /* ARR reload enable. */
+    timer_enable_preload(TIM5);
+    timer_set_prescaler(TIM5, (256*PSC_MUL_FACTOR)-1);// set to 1/8 Prescaler
+	timer_set_period(TIM5, 0X09FF);
+
+    /* Enable Debounce Driver Interrupt. */
+    timer_enable_irq(TIM5, TIM_DIER_UIE); /** Capture/compare 1 interrupt enable */
+	nvic_enable_irq(NVIC_TIM5_IRQ);
+    timer_enable_counter(TIM5); /* Counter enable. */
+}
+
 void exti0_isr()
 {
 	exti_reset_request(LIMIT_INT_vect_Z);
@@ -342,16 +367,19 @@ void limits_go_home(uint8_t cycle_mask)
       if (bit_istrue(cycle_mask,bit(idx))) {
         n_active_axis++;
         #ifdef COREXY
+        if (!approach)
+        {
           if (idx == X_AXIS) {
-            int32_t axis_position = system_convert_corexy_to_y_axis_steps(sys.position);
+            int32_t axis_position = (bit_istrue(settings.dir_invert_mask,bit(Y_AXIS)) ? -1 : 1) * system_convert_corexy_to_y_axis_steps(sys.position);
             sys.position[A_MOTOR] = axis_position;
             sys.position[B_MOTOR] = -axis_position;
           } else if (idx == Y_AXIS) {
-            int32_t axis_position = system_convert_corexy_to_x_axis_steps(sys.position);
+            int32_t axis_position = (bit_istrue(settings.dir_invert_mask,bit(X_AXIS)) ? -1 : 1) * system_convert_corexy_to_x_axis_steps(sys.position);
             sys.position[A_MOTOR] = sys.position[B_MOTOR] = axis_position;
           } else { 
             sys.position[Z_AXIS] = 0; 
           }
+        }
         #else
         sys.position[idx] = 0;
         #endif
@@ -387,6 +415,13 @@ void limits_go_home(uint8_t cycle_mask)
       if (approach) {
         // Check limit state. Lock out cycle axes when they change.
         limit_state = limits_get_state();
+#ifdef ENABLE_SOFTWARE_DEBOUNCE
+        if (limit_state != 0)
+        {
+        	enable_debounce_timer();
+        	limit_state = limits_get_state();
+        }
+#endif
         for (idx=0; idx<N_AXIS; idx++) {
           if (axislock & step_pin[idx]) {
             if (limit_state & (1 << idx)) { 
