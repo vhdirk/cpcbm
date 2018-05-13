@@ -502,15 +502,15 @@ void limits_go_home(uint8_t cycle_mask)
       #ifdef COREXY
         if (idx==X_AXIS) { 
           int32_t off_axis_position = system_convert_corexy_to_y_axis_steps(sys.position);
-          sys.position[A_MOTOR] = set_axis_position + off_axis_position;
-          sys.position[B_MOTOR] = set_axis_position - off_axis_position;          
+          sys.position[A_MOTOR] = (bit_istrue(settings.dir_invert_mask,bit(X_AXIS)) ? -1 : 1) * (set_axis_position) + (bit_istrue(settings.dir_invert_mask,bit(Y_AXIS)) ? -1 : 1) * (off_axis_position);
+          sys.position[B_MOTOR] = (bit_istrue(settings.dir_invert_mask,bit(X_AXIS)) ? -1 : 1) * (set_axis_position) - (bit_istrue(settings.dir_invert_mask,bit(Y_AXIS)) ? -1 : 1) * (off_axis_position);
         } else if (idx==Y_AXIS) {
           int32_t off_axis_position = system_convert_corexy_to_x_axis_steps(sys.position);
-          sys.position[A_MOTOR] = off_axis_position + set_axis_position;
-          sys.position[B_MOTOR] = off_axis_position - set_axis_position;
+          sys.position[A_MOTOR] = (bit_istrue(settings.dir_invert_mask,bit(X_AXIS)) ? -1 : 1) * (off_axis_position) + (bit_istrue(settings.dir_invert_mask,bit(Y_AXIS)) ? -1 : 1) * (set_axis_position);
+          sys.position[B_MOTOR] = (bit_istrue(settings.dir_invert_mask,bit(X_AXIS)) ? -1 : 1) * (off_axis_position) - (bit_istrue(settings.dir_invert_mask,bit(Y_AXIS)) ? -1 : 1) * (set_axis_position);
         } else {
           sys.position[idx] = set_axis_position;
-        }        
+        }
       #else 
         sys.position[idx] = set_axis_position;
       #endif
