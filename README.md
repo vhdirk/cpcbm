@@ -4,7 +4,7 @@ This README shall document the steps necessary to these applications up and runn
 
 ### What is this repository for? ###
 
-These are demo projects using the Nucleo F401 board and libopencm3 libraries. 
+These is the Compact PCB Maker project using the Nucleo F401 board and libopencm3 libraries. 
 
 ### How do I get set up? ###
 
@@ -33,12 +33,3 @@ make bin all
 To clean use the command:
 
 make clean
-
-
-Others points of this readme to be filled properly:
-
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
