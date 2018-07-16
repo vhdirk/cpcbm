@@ -80,6 +80,10 @@
   // Settings only for Grbl Simulator (www.github.com/grbl/grbl-sim)
   #include "defaults/defaults_cpcb.h"
 
+#elif defined(DEFAULTS_CPCB_LARGE)
+  // Settings only for Grbl Simulator (www.github.com/grbl/grbl-sim)
+  #include "defaults/defaults_cpcb_large.h"
+
 #else
   #error "Please define an existing settings file"
 #endif
