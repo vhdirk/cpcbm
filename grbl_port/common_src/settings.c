@@ -193,6 +193,7 @@ void settings_restore(uint8_t restore_flag) {
     settings.spindle_pwm_period = DEFAULT_SPINDLE_PWM_PERIOD;
     settings.spindle_pwm_max_time_on = DEFAULT_SPINDLE_PWM_MAX_TIME_ON;
     settings.spindle_pwm_min_time_on = DEFAULT_SPINDLE_PWM_MIN_TIME_ON;
+    settings.spindle_pwm_enable_at_start = DEFAULT_SPINDLE_PWM_ENABLE_AT_START;
 
     settings.flags = 0;
     if (DEFAULT_REPORT_INCHES) { settings.flags |= BITFLAG_REPORT_INCHES; }
@@ -470,6 +471,7 @@ uint8_t settings_store_global_setting(uint8_t parameter, float value) {
       case 28: settings.spindle_pwm_period = int_value32; break;
       case 29: settings.spindle_pwm_max_time_on = int_value32; break;
       case 30: settings.spindle_pwm_min_time_on = int_value32; break;
+      case 31: settings.spindle_pwm_enable_at_start = int_value32; break;
       default: 
         return(STATUS_INVALID_STATEMENT);
     }

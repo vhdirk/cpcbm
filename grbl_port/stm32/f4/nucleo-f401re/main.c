@@ -98,6 +98,19 @@ int main(void)
     plan_reset(); // Clear block buffer and planner variables
     st_reset(); // Clear stepper subsystem variables.
 
+#ifdef VARIABLE_SPINDLE
+    /* Check if a minimal pwm needs to be given to the spindle at startup
+       As an example, this is useful when using something like an ESC to
+       control the spindle motor and the ESC needs a small input PWM to be
+       activated. */
+    if(settings.spindle_pwm_enable_at_start)
+    {
+    	// Enable Clockwise spindle with minimal pwm
+    	gc_state.modal.spindle = SPINDLE_ENABLE_CW;
+    	spindle_set_state(SPINDLE_ENABLE_CW, 0);
+    }
+#endif
+
     // Sync cleared gcode and planner positions to current system position.
     plan_sync_position();
     gc_sync_position();
