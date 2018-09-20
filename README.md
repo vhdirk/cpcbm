@@ -1,3 +1,5 @@
+![alternativetext](https://bitbucket.org/compactpcbmaker/cpcbm/raw/517162e310646dce856bea25bbfab23e390ca87a/resources/the_ant_logo/the_ant_logo.png)
+
 # README #
 
 This README shall document the steps necessary to these applications up and running.
