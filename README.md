@@ -1,37 +1,24 @@
-![alternativetext](https://bitbucket.org/compactpcbmaker/cpcbm/raw/517162e310646dce856bea25bbfab23e390ca87a/resources/the_ant_logo/the_ant_logo.png)
+![alternativetext](https://bitbucket.org/compactpcbmaker/cpcbm/raw/517162e310646dce856bea25bbfab23e390ca87a/resources/the_ant_logo/the_ant_logo.png =50x20)
 
-# README #
 
-This README shall document the steps necessary to these applications up and running.
+The Ant is a project to develop a CNC machine able to realize single and double-layered printed circuit boards.
+The CNC machine is designed to achieve well-determined characteristics:
 
-### What is this repository for? ###
+- Compact
+- Low-cost
+- Robust
+- Scalable
+- Easy to build
+- Open License
 
-These is the Compact PCB Maker project using the Nucleo F401 board and libopencm3 libraries. 
+To achieve these properties the following design principle have been adopted:
 
-### How do I get set up? ###
+- Electrical, mechanical and electronics parts have been chosen to be small, low-cost and easily available on the open market or 3D printable
+- Mechanical design has been oriented to minimize the space occupied by the components
+- Mechanics has been designed to be robust and stress resistant
+- Mechanics has been designed so that the external dimensions of the machine may be changed with a minimal change of pieces and no re-design needed.
+- Mechanical and electrical designs have taken in account the assembling and disassembling operations, allowing to use easily available tools as screwdrivers, Allen wrenches and a solder for electrical contacts.
+- The microcontroller board used to control the CNC machine is inexpensive (~15 $) but is equipped with a powerful STM32 processor and many peripherals.
+- The machine control firmware can be loaded with almost no effort, since the microcontroller board has been chosen to have an on-board programmer.
+- The control firmware is derived from GRBL v.0.9j, but it is also customized to achieve better performance, taking advantage of the powerful processor, and to be more flexible, since more configuration parameters and features have been added respect to the original firmware
 
-* Generic instructions
-
-Get the repository in a folder (I call it "main folder" from now on), and get the library libopencm3 in "libopencm3" sub-folder.
-
-You should install a gcc arm toolchain and make sure it's used to compile by setting the correct PATH to it.
-Since the makefiles use GNU compiler tools and linux commands (e.g. "ls"), in order to compile on Windows environment something as MinGW or Cygwin should be used.
-In particular for Windows, download and install:
-
-1. msys ([click here](http://sourceforge.net/projects/mingw/files/MSYS/Base/msys-core/msys-1.0.11/MSYS-1.0.11.exe)) or equivalent.
-2. Python 2.7 ([click here](http://www.python.org/ftp/python/2.7/python-2.7.msi))
-3. arm-none-eabi/arm-elf toolchain (for example this one [here](https://launchpad.net/gcc-arm-embedded))
-
-Set the path for the tools and the toolchain, for example:
-
-*
-set PATH=C:\msys\1.0\bin\;C:\Python27\;C:\path-to-gcc-arm-none-eabi\bin;*
-
-Then from a command line change directory tothe main project folder and type:
-
-make bin all
-
-, to compile the projects and generate the binaries.
-To clean use the command:
-
-make clean
