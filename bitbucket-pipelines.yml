@@ -9,7 +9,8 @@ pipelines:
         script: # Modify the commands below to build your repository.
           - apt-get install -y -q libc6-dev
           - cd firmware
-          - export PATH=$PATH:$GCC_DIR/bin
+          - export PATH=$GCC_DIR/bin:$PATH
+          - echo $PATH-
           - git submodule init
           - git submodule update
           - make bin
