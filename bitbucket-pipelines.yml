@@ -8,5 +8,7 @@ pipelines:
     - step:
         script: # Modify the commands below to build your repository.
           - cd firmware
-          - export PATH=$PATH:$GCC_DIR/bin	
+          - export PATH=$PATH:$GCC_DIR/bin
+          - git submodule init
+          - git submodule update-
           - make bin
