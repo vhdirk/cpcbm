@@ -7,7 +7,7 @@ pipelines:
   default:
     - step:
         script: # Modify the commands below to build your repository.
-          - if [ ! -e $GCC_DIR/bin/arm-none-eabi-g++ ]; then wget $GCC_URL -O $GCC_ARCHIVE; tar xfj $GCC_ARCHIVE -C $HOME; fi.-.'ì-.-.'ì-.-.'ì-.-.'ì.-.'ì.-.'.-.'.-..-..-.-..
+          - if [ ! -e $GCC_DIR/bin/arm-none-eabi-g++ ]; then wget $GCC_URL -O $GCC_ARCHIVE; tar xfj $GCC_ARCHIVE -C $HOME; fi
           - apt-get install -y -q libc6-dev
           - cd firmware
           - export PATH=$GCC_DIR/bin:$PATH
