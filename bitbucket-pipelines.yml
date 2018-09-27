@@ -1,14 +1,12 @@
-# This is a sample build configuration for C++ â€“ Make.
-# Check our guides at https://confluence.atlassian.com/x/5Q4SMw for more examples.
+# This is a sample build configuration for C++ – Make.
 # Only use spaces to indent your .yml configuration.
 # -----
-# You can specify a custom docker image from Docker Hub as your build environment.
+# You can use any Docker image from Docker Hub, or your own container registry, as your build environment.
 image: gcc:6.1
-
 pipelines:
   default:
     - step:
         script: # Modify the commands below to build your repository.
-          - if [ ! -e $GCC_DIR/bin/arm-none-eabi-g++ ]; then wget $GCC_URL -O $GCC_ARCHIVE; tar xfj $GCC_ARCHIVE -C $HOME; fi
+          - cd ./firmware------------------------
+          - export PATH=$PATH:$GCC_DIR/bin	
           - make bin
-          
