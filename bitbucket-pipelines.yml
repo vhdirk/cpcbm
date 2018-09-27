@@ -7,6 +7,6 @@ pipelines:
   default:
     - step:
         script: # Modify the commands below to build your repository.
-          - cd ./firmware------------------------
+          - cd $BUILD_DIR/firmware
           - export PATH=$PATH:$GCC_DIR/bin	
           - make bin
