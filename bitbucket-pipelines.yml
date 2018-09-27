@@ -7,7 +7,7 @@ pipelines:
   default:
     - step:
         script: # Modify the commands below to build your repository.
-          - apt-get install -y -q libc6-i386
+          - apt-get install -y -q libc6-dev-i386
           - cd firmware
           - export PATH=$PATH:$GCC_DIR/bin
           - git submodule init
