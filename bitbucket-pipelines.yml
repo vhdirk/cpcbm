@@ -10,5 +10,5 @@ pipelines:
           - cd firmware
           - export PATH=$PATH:$GCC_DIR/bin
           - git submodule init
-          - git submodule update-
+          - git submodule update
           - make bin
