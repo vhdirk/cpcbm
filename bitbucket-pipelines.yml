@@ -20,3 +20,5 @@ pipelines:
           - git submodule init
           - git submodule update
           - make bin
+          - cp $BITBUCKET_CLONE_DIR/firmware/grbl_port/stm32/f4/nucleo-f401re/build_dir/main.bin $BITBUCKET_CLONE_DIR/firmware/grbl_port/stm32/f4/nucleo-f401re/build_dir/main_f401_$BITBUCKET_BUILD_NUMBER.bin
+          - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"$BITBUCKET_CLONE_DIR/firmware/grbl_port/stm32/f4/nucleo-f401re/build_dir/main_f401_$BITBUCKET_BUILD_NUMBER.bin"
