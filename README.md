@@ -2,6 +2,9 @@
 
 
 The Ant is a project to develop a CNC machine able to realize single and double-layered printed circuit boards.
+
+[Here is a video presentation](https://youtu.be/nVkbG-CYaAA)
+
 The CNC machine is designed to achieve well-determined characteristics:
 
 - Compact
