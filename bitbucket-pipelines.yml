@@ -6,19 +6,21 @@ image: python:2.7
 pipelines:
   default:
     - step:
+        caches:
+          - toolchain
         script: # Modify the commands below to build your repository.
           - export GCC_ARCHIVE=$HOME/gcc-arm-none-eabi-6-2017-q1-update-linux.tar.bz2
           - export GCC_DIR=$HOME/gcc-arm-none-eabi-6-2017-q1-update
           - export GCC_URL=https://developer.arm.com/-/media/Files/downloads/gnu-rm/6_1-2017q1/gcc-arm-none-eabi-6-2017-q1-update-linux.tar.bz2?product=GNU%20ARM%20Embedded%20Toolchain,64-bit,,Linux,6-2017-q1-update
-          - echo $GCC_ARCHIVE
-          - echo $GCC_DIR
-          - echo $GCC_URL
           - if [ ! -e $GCC_DIR/bin/arm-none-eabi-g++ ]; then wget $GCC_URL -O $GCC_ARCHIVE; tar xfj $GCC_ARCHIVE -C $HOME; fi
           - cd firmware
           - export PATH=$GCC_DIR/bin:$PATH
-          - echo $PATH
           - git submodule init
           - git submodule update
           - make bin
           - cp $BITBUCKET_CLONE_DIR/firmware/grbl_port/stm32/f4/nucleo-f401re/build_dir/main.bin $BITBUCKET_CLONE_DIR/firmware/grbl_port/stm32/f4/nucleo-f401re/build_dir/main_f401_$BITBUCKET_BUILD_NUMBER.bin
           - curl -X POST --user "${BB_AUTH_STRING}" "https://api.bitbucket.org/2.0/repositories/${BITBUCKET_REPO_OWNER}/${BITBUCKET_REPO_SLUG}/downloads" --form files=@"$BITBUCKET_CLONE_DIR/firmware/grbl_port/stm32/f4/nucleo-f401re/build_dir/main_f401_$BITBUCKET_BUILD_NUMBER.bin"
+
+definitions:
+    caches:
+        toolchain: $HOME/$GCC_DIR

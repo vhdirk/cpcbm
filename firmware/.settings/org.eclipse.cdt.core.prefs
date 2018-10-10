@@ -1,6 +1,6 @@
 eclipse.preferences.version=1
 environment/project/ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1564874634/PATH/delimiter=;
 environment/project/ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1564874634/PATH/operation=replace
-environment/project/ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1564874634/PATH/value=C\:\\Python27;C\:\\msys\\1.0\\bin;C\:\\STM32_Toolchain\\gcc-arm-none-eabi-5_3-151225\\bin;
+environment/project/ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1564874634/PATH/value=C\:\\Python27;C\:\\msys\\1.0\\bin;C\:\\gcc-arm-none-eabi-6-2017-q1\\bin;
 environment/project/ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1564874634/append=true
 environment/project/ilg.gnuarmeclipse.managedbuild.cross.config.elf.debug.1564874634/appendContributed=true
