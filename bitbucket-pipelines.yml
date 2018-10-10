@@ -23,4 +23,4 @@ pipelines:
 
 definitions:
     caches:
-        toolchain: $HOME/$GCC_DIR
+        toolchain: $GCC_DIR
