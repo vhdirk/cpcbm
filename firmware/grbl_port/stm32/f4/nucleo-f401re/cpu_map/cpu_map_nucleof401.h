@@ -26,7 +26,7 @@
 #include <libopencm3/stm32/flash.h>
 #include <libopencm3/stm32/timer.h>
 
-#define TEST_NUCLEO_EXTI_PINS
+//#define TEST_NUCLEO_EXTI_PINS
 
 //#define BASIC_CPU_SPEED
 #ifdef BASIC_CPU_SPEED

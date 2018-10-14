@@ -62,7 +62,7 @@ void settings_write_coord_data(uint8_t coord_select, float *coord_data)
 {
   uint32_t addr = coord_select*(sizeof(float)*(N_AXIS+1)) + EFLASH_ADDR_PARAMETERS_MAIN;
   uint32_t addr_copy = coord_select*(sizeof(float)*(N_AXIS+1)) + EFLASH_ADDR_PARAMETERS_COPY;
-  uint32_t status = flash_verify_erase_need((char *) addr, (char*)coord_data, ((unsigned int)sizeof(float)*(N_AXIS+1)));
+  uint32_t status = flash_verify_erase_need((char *) addr, (char*)coord_data, ((unsigned int)sizeof(float)*N_AXIS));
 
   if (status == 0)
   {
