@@ -57,7 +57,7 @@ void write_global_settings()
 }
 
 
-// Method to store coord data parameters into EEPROM
+// Method to store coord data parameters into EFLASH
 void settings_write_coord_data(uint8_t coord_select, float *coord_data)
 {
   uint32_t addr = coord_select*(sizeof(float)*(N_AXIS+1)) + EFLASH_ADDR_PARAMETERS_MAIN;
