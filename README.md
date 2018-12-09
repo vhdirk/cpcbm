@@ -1,6 +1,8 @@
-##Youtube Channel: [The Ant PCB Maker](https://www.youtube.com/channel/UCX44z-SSL7LzcB4xxgUdHHA)
+## News[09-12-2018]: The first partial release of the mechanical drawings of the machine are OUT!!! Informative videos and other parts drawings will follow as soon as possible.
 
-##Contact us at: compact.pcb.maker.team@gmail.com
+## Youtube Channel: [The Ant PCB Maker](https://www.youtube.com/channel/UCX44z-SSL7LzcB4xxgUdHHA)
+
+## Contact us at: compact.pcb.maker.team@gmail.com
 
 [![alternativetext](https://bitbucket.org/compactpcbmaker/cpcbm/raw/517162e310646dce856bea25bbfab23e390ca87a/resources/the_ant_logo/the_ant_logo.png =50x20)](https://www.youtube.com/channel/UCX44z-SSL7LzcB4xxgUdHHA)
 
