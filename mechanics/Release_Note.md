@@ -1,3 +1,11 @@
+# 31-12-2018
+
+## Scope
+
+Release of mechanical drawings of the Compact PCB Maker. 
+This release completes the previous one and comprises the mechanical drawings of the bridge, of the head and of the microcontroller cover. 
+The suggestions of the previous release apply also to this one.
+
 # 09-12-2018
 
 ## Scope
