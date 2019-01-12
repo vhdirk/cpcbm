@@ -268,7 +268,7 @@ void SW_DEBOUNCE_TIMER_ISR()
   {
     WDTCSR &= ~(1<<WDIE); // Disable watchdog timer.
 #endif
-    if (sys.state != STATE_ALARM) {  // Ignore if already in alarm state. 
+    if (sys.state != STATE_HOMING && sys.state != STATE_ALARM) {  // Ignore if already in alarm state and during homing.
       if (!(sys_rt_exec_alarm)) {
         // Check limit pin state. 
         if (limits_get_state()) {
