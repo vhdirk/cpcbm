@@ -4,7 +4,7 @@
 
 ## Instagram : [The Ant Team](https://www.instagram.com/the_ant_team/)
 
-## Contact us at: compact.pcb.maker.team@gmail.com
+## Contact us at: the.ant.pcb@gmail.com or compact.pcb.maker.team@gmail.com
 
 [![alternativetext](https://bitbucket.org/compactpcbmaker/cpcbm/raw/517162e310646dce856bea25bbfab23e390ca87a/resources/the_ant_logo/the_ant_logo.png =50x20)](https://www.youtube.com/channel/UCX44z-SSL7LzcB4xxgUdHHA)
 
