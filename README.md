@@ -13,7 +13,7 @@
 
 ## Contact us at: the.ant.pcb@gmail.com or compact.pcb.maker.team@gmail.com
 
-[![alternativetext](https://bitbucket.org/compactpcbmaker/cpcbm/raw/517162e310646dce856bea25bbfab23e390ca87a/resources/the_ant_logo/the_ant_logo.png =50x20)](https://www.youtube.com/channel/UCX44z-SSL7LzcB4xxgUdHHA)
+[![alternativetext](https://bitbucket.org/compactpcbmaker/cpcbm/raw/6ffa7937e43088e09a562490447c1323f4919ad3/resources/the_ant_logo/the_ant_logo_small.png =50x20)](https://www.youtube.com/channel/UCX44z-SSL7LzcB4xxgUdHHA)
 
 
 The Ant is a project to develop a CNC machine able to realize single and double-layered printed circuit boards.
@@ -40,3 +40,7 @@ To achieve these properties the following design principle have been adopted:
 - The machine control firmware can be loaded with almost no effort, since the microcontroller board has been chosen to have an on-board programmer.
 - The control firmware is derived from GRBL v.0.9j, but it is also customized to achieve better performance, taking advantage of the powerful processor, and to be more flexible, since more configuration parameters and features have been added respect to the original firmware
 
+
+The Ant is an open project, but if you feel like donating a small sum, you are very welcome. Just use the paypal button below.
+
+[![paypal](https://bitbucket.org/compactpcbmaker/cpcbm/raw/4311b6ad335d86206ed62cc0bc5e36fd7de749bf/resources/button/pp_button_small.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BTRCVPZUZYW2E)
