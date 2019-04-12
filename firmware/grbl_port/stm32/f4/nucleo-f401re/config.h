@@ -35,7 +35,7 @@
 #define DEFAULTS_CPCB
 
 // Default pwm spindle parameters. Used when resetting EEPROM. Change to desired name in pwm_spindle_params.h
-#define PWM_SPINDLE_PARAMS_GENERIC
+#define PWM_SPINDLE_PARAMS_AFRO20
 
 // Serial baud rate
 #define BAUD_RATE 115200

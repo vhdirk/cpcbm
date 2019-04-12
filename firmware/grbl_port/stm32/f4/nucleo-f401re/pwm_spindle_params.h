@@ -29,6 +29,10 @@
   // Grbl generic pwm spindle parameters.
   #include "pwm_spindle_parameters/pwm_spindle_params_generic.h"
 
+#elif defined(PWM_SPINDLE_PARAMS_AFRO20)
+  // Grbl AFRO 20 ESC pwm spindle parameters.
+  #include "pwm_spindle_parameters/pwm_spindle_params_afro20.h"
+
 #else
   #error "Please define an existing PWM_SPINDLE parameters file"
 #endif
